@@ -14,16 +14,6 @@ object Version {
 }
 
 
-object StraightIOBuild extends Build {
-  import Settings._
-  lazy val straightIOProject = Project( 
-                               id = "straight-io", 
-                               base = file("."),
-                               settings = defaultSettings
-                             ) 
-}
-
-
 /**
  * The SBT Build Object
  */
@@ -35,8 +25,6 @@ object RootBuild extends Build {
   lazy val root = Project(
           id = "io-straight-fw", 
           base = file("."))
-          settings = defaultSettings
-   )
    .settings(libraryDependencies ++= commonDeps ++ commonDeps ++ sprayDeps ++ akkaPersistence ++ jackson ++ subcut ++ googleApiDep)
 }
 
