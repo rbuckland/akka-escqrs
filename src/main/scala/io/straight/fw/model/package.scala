@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package io.straight.model
+package io.straight.fw
 
+import scalaz.Validation
 
-/**
- * BaseDomainWithId is a domain object that also has an ID.
- * the id will be Class Domain unique (a class primary key)
- * 
- * The ID's primary usage is for referencing external to the system.
- * 
- * There are methods to bind UUID and ID together. We might do that.
- */
-abstract class BaseWithDomainId[T <: DomainId] extends BaseDomain {
-    def id: T
+package object model {
+
+  type DomainError          = List[String]
+  object DomainError {
+    def apply(msg: String): DomainError = List(msg)
+  }
+
+  // What the? Read on - http://stackoverflow.com/questions/8736164/what-are-type-lambdas-in-scala-and-what-are-their-benefits
+  // The λ[α] are just type Paramaters (like T or A)
+  type DomainValidation[+α] = ({type λ[α]=Validation[DomainError, α]})#λ[α]
+
 }

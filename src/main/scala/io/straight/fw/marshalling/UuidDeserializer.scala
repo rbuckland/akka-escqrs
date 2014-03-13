@@ -15,18 +15,16 @@
  */
 
 
-package io.straight.web.marshalling
+package io.straight.fw.marshalling
 
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.{ JsonDeserializer, JsonSerializer }
-import io.straight.model.Uuid
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.core.Version
-import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.module.SimpleModule
+import io.straight.fw.model.Uuid
 
 /**
  * Deserializer for the Uuid class

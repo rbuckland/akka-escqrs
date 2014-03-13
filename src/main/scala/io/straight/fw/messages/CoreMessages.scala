@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.straight.fw.messages
 
-package io.straight.model
+import io.straight.fw.model.BaseDomain
 
-case class Uuid(uuid: String) {
-  require(uuidRegex.unapplySeq(uuid).isDefined, "The UUID String (" + uuid + ") supplied is invalid")
-  def this() = this(java.util.UUID.randomUUID().toString())
-  private def uuidRegex = """[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}""".r
-}
+/**
+ * Incoming, BaseCommand
+ * Outgoing, BaseEvent
+ * 
+ */
+abstract class BaseCommand()
+
+abstract class BaseEvent()
+
+
+

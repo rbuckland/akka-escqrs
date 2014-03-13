@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package io.straight.web.marshalling
+package io.straight.fw.marshalling
 
 import org.slf4j.LoggerFactory
-import io.straight.model._
-import io.straight.validation._
-import spray.http._
-import spray.http.HttpBody
+import io.straight.fw.model._
 import spray.http.MediaTypes._
 import spray.httpx.marshalling._
 import spray.httpx.unmarshalling._
-import scalaz.Failure
-import spray.routing.Rejection
-import spray.routing.RequestContext
+import spray.http.HttpEntity.Empty
+import spray.http.{MediaType, HttpEntity, ContentTypeRange}
+import io.straight.fw.validation.ValidationException
 
 
-object ResponseMarshaller {
-  
+object DomainValidationMarshaller {
+
+  val logger = LoggerFactory.getLogger(this.getClass())
+
   import scalaz._
-  import Scalaz._
- 
-  implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) = 
+
+  implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
     Marshaller[DomainValidation[T]] { (value,ctx) =>
-      value match { 
-        case Success(result) => m.apply(result, ctx)
-        case Failure(errors) => ctx.handleError(ValidationException(errors))
+      value match {
+        case Success(result) => {
+          logger.info("going to marshall " + result.getClass)
+          m.apply(result, ctx)
+        }
+        case Failure(errors) => throw ValidationException(errors)
       }
   }
 }
@@ -49,22 +50,15 @@ object JacksonUnmarshaller extends JacksonMapper {
       val canUnmarshalFrom = ContentTypeRange(`application/json`) :: ContentTypeRange(`text/xml`) :: ContentTypeRange(`application/xml`) :: Nil
       def unmarshal(entity: HttpEntity) = {
         entity match {
-          // no content
-          case EmptyEntity => Left(ContentExpected)
-          // content (cause an "Either Left(error) or Right(Object)" to occur through the protect()
-          case b @ HttpBody(contentType, buffer) => protect(
-              
+          case Empty => Left(ContentExpected)
+          case HttpEntity.NonEmpty(contentType, data) => protect(
               contentType.mediaType match {
-                
                 // call Jackson XMLMapper
-                case `text/xml` | `application/xml` => deserializeXml[T](b.asString)
-                
-                // call Jackon JSONMapper 
-                case `application/json` => deserializeJson[T](b.asString)
-                
+                case `text/xml` | `application/xml` => deserializeXml[T](data.asString)
+                // call Jackon JSONMapper
+                case `application/json` => deserializeJson[T](data.asString)
                 case _ => throw new Exception("Unsupported mediaType: " + contentType.mediaType)
               }
-              
             )
         }
       }
@@ -73,27 +67,30 @@ object JacksonUnmarshaller extends JacksonMapper {
 }
 
 
-object JacksonMarshaller extends JacksonMapper{
+object JacksonMarshaller extends JacksonMapper {
 
   
   val logger = LoggerFactory.getLogger(this.getClass())
 
-  private def marshal(mediaType: MediaType, value: Any) = {
+  def marshal(mediaType: MediaType, value: Any): String = {
     mediaType match {
       case `text/xml` | `application/xml` => serializeXml(value)
       case `application/json` => serializeJson(value)
-      case _ => "Error - the marshaller doesn't support " + mediaType.toString
+      case _ => ("Error - the marshaller doesn't support " + mediaType.toString)
     }
   }
 
-  implicit def basicBaseDomainMarshaller[A <: BaseDomain] =
+  implicit def basicBaseDomainMarshaller[A <: BaseDomain]:spray.httpx.marshalling.Marshaller[A] = {
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
-      ctx.marshalTo(HttpBody(contentType, marshal(contentType.mediaType, value)))
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
+    }
+  }
+
+
+  implicit def basicContainerMarshaller[A <: BasicMarshallable]:spray.httpx.marshalling.Marshaller[A] =
+    Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
     }
 
-  implicit def basicContainerMarshaller[A <: BasicMarshallable] =
-    Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
-      ctx.marshalTo(HttpBody(contentType, marshal(contentType.mediaType, value)))
-    }
 
 }

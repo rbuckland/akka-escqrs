@@ -14,42 +14,37 @@
  * limitations under the License.
  */
 
-package io.straight.model
+package io.straight.fw.model
 
-import org.eligosource.eventsourced.core.Emitter
-import org.slf4j.LoggerFactory
 import scala.collection.mutable.Map
-import java.util.UUID
 import java.lang.reflect.{ Type, ParameterizedType }
-import scalaz._
-import scalaz.Scalaz._
+import scala.reflect.ClassTag
 
 
 /**
  * The IDGenerator Actor
  */
-trait IdGenerator[D <: DomainId] {
-  
-  implicit def klass: Class[_]
+trait UuidGenerator[D] {
   
   private val ids = Map.empty[String, Long]
-  
-  private[this]def className = klass.getClass().getCanonicalName()
+
+  def className()(implicit t: ClassTag[D]) = t.runtimeClass.getCanonicalName
 
   /**
    * return the next ID
+   * @param upperLong typically a timestamp (externally sourced, so that replays will work)
    */
-  def nextId:DomainId = {
+  def newUuid(upperLong: Long)(implicit t: ClassTag[D]): Uuid = {
     val idKey = className
     val currentId = ids.getOrElseUpdate(idKey, 0L)
     ids += (idKey -> (currentId + 1))
-    return currentId + 1
+    return Uuid.createUuid(className, currentId + 1, upperLong)
   }
-  
+    
   /**
-   * return the next ID. Processed inside a transaction
+   * We need this guy be running as an Actor .. return the next ID. Processed inside a transaction
    */
-  def setStartingId(startingId: Long): Long = {
+  def setStartingId(startingId: Long)(implicit t: ClassTag[D]): Long = {
 
       val idKey = className
       val currentId = ids.getOrElseUpdate(idKey, 0L)
@@ -62,5 +57,6 @@ trait IdGenerator[D <: DomainId] {
       }
       return startingId
   }
+  
 
 }

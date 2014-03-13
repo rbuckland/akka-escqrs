@@ -15,21 +15,16 @@
  */
 
 
-package io.straight.web.marshalling
+package io.straight.fw.marshalling
 
 import java.lang.reflect.{ Type, ParameterizedType }
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.`type`.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector
-import java.util.Date
-import com.fasterxml.jackson.databind.{ Module, ObjectMapper }
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.DeserializationFeature
-import java.io.StringWriter
 import com.fasterxml.jackson.datatype.joda.JodaModule
+import com.fasterxml.jackson.core.{Version, JsonParser}
+import com.fasterxml.jackson.databind.module.SimpleModule
 
 /**
  * FasterXML Jackson Library
@@ -38,6 +33,9 @@ import com.fasterxml.jackson.datatype.joda.JodaModule
  */
 trait JacksonMapper {
 
+
+  def jsonSerializer = internalJsonSerializer
+  def xmlSerializer = internalXmlSerializer
   /**
    * Serializer for JSON
    */
@@ -76,31 +74,85 @@ trait JacksonMapper {
     }
   }
 
-  def jsonSerializer = {
+  private def applyCommonConfig(m: ObjectMapper) {
+    m.registerModule(DefaultScalaModule)
+    m.registerModule(new JodaModule())
+    m.registerModule(UuidModule.create)
+  }
+
+  def internalJsonSerializer = {
     val m = new ObjectMapper()
-    m.registerModule(DefaultScalaModule)
-    m.registerModule(new JodaModule())
-    m.registerModule(UuidModule.create)
+    applyCommonConfig(m)
     // these are the settings for JAXB annotations .. but don't mix with the DefaultScalaModule well
    // m.setAnnotationIntrospector(new JaxbAnnotationIntrospector())
     //m.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
     //m.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, false);
-    m
+    m.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
 
-  def xmlSerializer = {
+  def internalXmlSerializer = {
     val m = new XmlMapper()
-    m.registerModule(DefaultScalaModule)
-    m.registerModule(new JodaModule())
-    m.registerModule(UuidModule.create)
+    applyCommonConfig(m)
     // these are the settings for JAXB annotations .. but don't mix with the DefaultScalaModule well
    // m.setAnnotationIntrospector(new JaxbAnnotationIntrospector())
     //m.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
     //m.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, false);
     m
-
   }
 
+  /**
+   * We use this Serializer for loading configuration files to Case Classes
+   * It means we can comment the config file to our hearts content!
+   *
+   * but we DON'T use this one for our APIs
+   * Use it like:
+   *
+   *   val jackson = new JacksonMapper {
+   *     override def jsonSerializer = jsonSerializerRelaxed
+   *   }
+   *
+   * @return
+   */
+  def jsonSerializerRelaxed = {
+    val m = internalJsonSerializer
+    m.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    m.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+    m.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+    m
+  }
+
+  def jsonSerialiserRelaxedWithEmptyDefaults = {
+    val m = internalJsonSerializer
+    m.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    m.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+    m.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+    m.registerModule(NullToEmptyStringDeserialiser.create)
+    m
+  }
+
+  def jsonSerializerAllAnnonIgnore = {
+    val m = internalJsonSerializer
+    m.configure(MapperFeature.USE_ANNOTATIONS, false);
+    m
+  }
+
+  def xmlSerializerAllAnnonIgnore = {
+    val m = internalXmlSerializer
+    m.configure(MapperFeature.USE_ANNOTATIONS, false);
+    m
+  }
+
+}
+
+class NullToEmptyStringDeserialiser extends JsonDeserializer[String] {
+  def deserialize(jp: JsonParser, ctxt: DeserializationContext) = jp.getText
+  override def getNullValue  =  "";
+}
+object NullToEmptyStringDeserialiser {
+  def create() = {
+    new SimpleModule("NullToEmptyStringDeserialiserModule",new Version(1,0,0,null,"io.straight","NullToEmptyStringDeserialiserModule"))
+      .addDeserializer(classOf[String], new NullToEmptyStringDeserialiser())
+  }
 }
 
 

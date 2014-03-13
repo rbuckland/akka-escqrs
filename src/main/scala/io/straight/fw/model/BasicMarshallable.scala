@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package io.straight.web
+package io.straight.fw.model
 
-import spray.routing.directives.PathMatcher
-import shapeless._
-import spray.routing.HttpService
-
-trait CommonSpraySupport extends HttpService {
-
-  val longAnyMatcher = LongNumber.asInstanceOf[PathMatcher[Any :: HNil]]
-  val uuidAnyMatcher = JavaUUID.asInstanceOf[PathMatcher[Any :: HNil]]
-
-}
+/**
+ * This trait is used when we want a class to be marshallable going "out" from spray.
+ * 
+ * I use these on "Container" classes such as: 
+ * 
+ * case class Persons(persons: List[Person]) extends BasicMarshallable
+ * 
+ * Where Person is a real domain case class.
+ */
+trait BasicMarshallable

@@ -14,28 +14,29 @@
  * limitations under the License.
  */
 
-package io.straight.service
+package io.straight.fw.service
 
 import scala.concurrent.stm.Ref
+import scala.collection.immutable.TreeMap
 
 /**
- * A Wrapper around an STM Ref of a Map.
+ * A Wrapper around an STM Ref of a SortedMap.
+ *
  * To be used by the "Service" class and the "Processor" classes only
+ *
  */
-class Repository[K,A](keyGetter: (A) => K) {
+abstract class Repository[K,A](keyGetter: (A) => K) {
 
-  private val internalMap :Ref[Map[K,A]] = Ref(Map.empty[K, A])
+  implicit def ordering: Ordering[K];
+
+  private val internalMap :Ref[TreeMap[K,A]] = Ref(TreeMap.empty[K, A])
   
   def getMap = internalMap.single.get
   def getByKey(key: K): Option[A] = getMap.get(key)
   def getValues: Iterable[A] = getMap.values
   def getKeys: Iterable[K] = getMap.keys
   
-  // TODO work out how to restrict the updateMap to just 
-  // subclasses of AbstractProcessor.
-  // at the moment, the AbstractProcessor must be in the io.straight.service package
-  // CHANGE this
-  protected[service] def updateMap(value: A) =
+  def updateMap(value: A) =
     internalMap.single.transform(map => map + (keyGetter(value) -> value))
    
 }
