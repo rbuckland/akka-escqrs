@@ -31,23 +31,23 @@ import io.straight.fw.jackson.JacksonBindingSupport._
  *
  * uuid will be globally unique
  * the id will be Class Domain unique (a class primary key)
+ *
+ * TODO remove the reliance on UUID here (for people that want to use ID as the key)
  */
-abstract class BaseDomain(
+abstract class BaseDomain[I <: Any](
                            // for some reason, when these are addedd to the abstract class and overidden in subclasses
                            // we need to explicitly tell Jackson to Marshal them
-                           @jsonProperty val uuid: Uuid,
+                           @jsonProperty val id: I,
                            @jsonProperty val version: Long
                            ) {
-  @JsonGetter
-  def shortId = uuid.shortId
 
   def versionOption = if (version == -1L) None else Some(version)
 
   private val invalidVersionMessage = "%s(%s): expected version %s doesn't match current version %s"
 
-  def invalidVersion(expected: Long) = DomainError(invalidVersionMessage format(this.getClass.getCanonicalName, uuid, expected, version))
+  def invalidVersion(expected: Long) = DomainError(invalidVersionMessage format(this.getClass.getCanonicalName, id, expected, version))
 
-  def versionCheck[T <: BaseDomain](expectedVersion: Option[Long]): DomainValidation[T] = {
+  def versionCheck[T <: BaseDomain[I]](expectedVersion: Option[Long]): DomainValidation[T] = {
     expectedVersion match {
       case Some(expected) if version.toLong != expected.toLong => invalidVersion(expected).fail
       case Some(expected) if version.toLong == expected.toLong => this.asInstanceOf[T].success

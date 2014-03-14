@@ -80,7 +80,7 @@ object JacksonMarshaller extends JacksonMapper {
     }
   }
 
-  implicit def basicBaseDomainMarshaller[A <: BaseDomain]:spray.httpx.marshalling.Marshaller[A] = {
+  implicit def basicBaseDomainMarshaller[A <: BaseDomain[I], I <: Any]:spray.httpx.marshalling.Marshaller[A] = {
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
       ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
     }

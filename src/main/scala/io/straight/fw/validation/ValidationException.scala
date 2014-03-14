@@ -19,12 +19,13 @@ package io.straight.fw.validation
 import spray.util.LoggingContext
 import spray.routing.ExceptionHandler
 import io.straight.fw.marshalling.JacksonMapper
+import io.straight.fw.StraightIOBaseException
 
 /**
  * This exception is used to throw up through the spray hierachy.
  * https://groups.google.com/forum/#!msg/spray-usersecurity/D0d5ZJcvkoo/fxHzwH7YYq0J
  */
-case class ValidationException(errors: List[String]) extends Throwable
+case class ValidationException(errors: List[String]) extends StraightIOBaseException(errors.toString,null)
 
 // This is the ValidationExceptionHandler for use with the ValidationException
 trait ValidationExceptionHandler { 

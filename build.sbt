@@ -1,4 +1,4 @@
-organization in ThisBuild := "org.soqqo"
+organization in ThisBuild := "io.straight.fw"
 
 name := "io-straight-fw"
 

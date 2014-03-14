@@ -8,37 +8,71 @@ import akka.persistence.EventsourcedProcessor
 import scala.reflect.runtime.universe._
 import io.straight.fw.messages.{BaseEvent, BaseCommand}
 import scala.reflect.ClassTag
+import scalaz.Success
+import scalaz.Failure
+import scala.Some
 
 /**
  * @author rbuckland
  */
-trait AbstractProcessor[T <: BaseDomain, E <: BaseEvent, C <: BaseCommand] extends EventsourcedProcessor with UuidGenerator[T] {
+trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I <: Any] extends EventsourcedProcessor {
 
-  protected val log = Logging(context.system, this)
+  self ! "ResetPrimaryKeyId"
 
   /**
    * Our repository (implement with val constructor)
+   *
+   * I is the ID (or key) for the repository
+   * T is the Domain Object (extends from BaseDomain)
+   *
    */
-  protected def repository: UuidWithIdRepository[T]
+  protected def repository: Repository[I,T]
+
+  /**
+   * Each time we create a new Domain Object, we need a new ID.
+   * We will delegate that responsibility to this fellow.
+   *
+   * Also, when we recover, we will tell it (after we have finished reocovering)
+   * what the current (starting) id now is
+   *
+   * In theory this idGenerator could be shared amongst (*huh*) multiple Aggregate Actors.
+   * ooh test that !  cos I have not got time
+   *
+   * @return
+   */
+  protected def idGenerator: IdGenerator[I,T]
+
+  /**
+   * Aggregate *ahh fancy*. This is the Base Domain Object classname
+   *
+   * @param t
+   * @return
+   */
+  def aggregateClassName()(implicit t: ClassTag[T]) = t.runtimeClass.getCanonicalName
+
+  override def receive = initializing.orElse(active)
+
+  def initializing: Receive = {
+    case "ResetPrimaryKeyId" =>
+
+      // recovery has finished .. so set the ID on the repo
+      idGenerator.setStartingId(repository.maxId)
+
+      unstashAll()
+      context.become(active)
+    case other if recoveryFinished =>
+      stash()
+  }
+
+  def active: Receive = super.receive
+
+  protected val log = Logging(context.system, this)
 
   /**
    * A call to the repository
    */
   private def updateRepository(domainObject: T) = repository.updateMap(domainObject)
 
-  /**
-   * Utility method we will use to ensure that the version being modified is the one you expect :-)
-   *
-   * @param uuid
-   * @param expectedVersion
-   * @return
-   */
-  def ensureVersion(uuid: Uuid, expectedVersion: Option[Long])(implicit t: ClassTag[T]): DomainValidation[T] = {
-    repository.getByKey(uuid) match {
-      case None => DomainError(className + "(%s): does not exist" format uuid).fail
-      case Some(domainObject) => domainObject.versionCheck(expectedVersion)
-    }
-  }
 
   /**
    * Upon recovery we will do some magic and return a domain object
@@ -87,9 +121,9 @@ trait AbstractProcessor[T <: BaseDomain, E <: BaseEvent, C <: BaseCommand] exten
 
 }
 
-trait AbstractService[T <: BaseDomain] {
-  protected def repository: UuidWithIdRepository[T]
-  def get(uuid: Uuid): Option[T] = repository.getByKey(uuid)
+trait AbstractService[T <: BaseDomain[I], I <: Any] {
+  protected def repository: Repository[I,T]
+  def get(id: I): Option[T] = repository.getByKey(id)
   def getMap = repository.getMap
   def getAll: Iterable[T] = repository.getValues
 }

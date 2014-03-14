@@ -18,6 +18,7 @@ package io.straight.fw.service
 
 import scala.concurrent.stm.Ref
 import scala.collection.immutable.TreeMap
+import io.straight.fw.model.BaseDomain
 
 /**
  * A Wrapper around an STM Ref of a SortedMap.
@@ -25,7 +26,7 @@ import scala.collection.immutable.TreeMap
  * To be used by the "Service" class and the "Processor" classes only
  *
  */
-abstract class Repository[K,A](keyGetter: (A) => K) {
+abstract class Repository[K,A <: BaseDomain[K]] {
 
   implicit def ordering: Ordering[K];
 
@@ -35,8 +36,14 @@ abstract class Repository[K,A](keyGetter: (A) => K) {
   def getByKey(key: K): Option[A] = getMap.get(key)
   def getValues: Iterable[A] = getMap.values
   def getKeys: Iterable[K] = getMap.keys
-  
-  def updateMap(value: A) =
-    internalMap.single.transform(map => map + (keyGetter(value) -> value))
+
+  /**
+   * Return the Max ID as per what the repository knows is the max ID
+   * This may just be the max of an Int or the Max of a String of some form
+   * @return
+   */
+  def maxId:K
+
+  def updateMap(value: A) = internalMap.single.transform(map => map + (value.id -> value))
    
 }

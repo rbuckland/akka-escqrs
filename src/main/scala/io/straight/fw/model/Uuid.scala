@@ -18,81 +18,65 @@ package io.straight.fw.model
 
 import java.security.SecureRandom
 
-case class Uuid(uuid: String) {
-  require(uuidRegex.unapplySeq(uuid).isDefined, "The UUID String (" + uuid + ") supplied is invalid")
-  private def uuidRegex = """[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}""".r
+/*
+ * This Uuid Class internally stores the 3 values we care about
+ *
+ * Two others are fixed  (version and variant)
+ *
+A UUID is comprised of two 64bit longs.
+[       lower    ] [    upper      ]
+00000000-0000-6000-a000-000000000000
+                  -----------------
+                  60 bits Random bits (time or other)
+                 -
+                 x == a, b, 8 or 9 - we will use 'a'
+             ---
+             Group ID - of 12 bits value is (0 to 4095)
+            -
+            6 == always for (Version 6 -- because we can (we are not really UUID's)
+-------- ----
+Primary key ID of 48 bits  (max 281,474,976,710,656)
 
+Essentially, the ID and the Group ID of the object
+will be found in the lower 64 bits, separated in the UUID by the '6' (the version).
+The other upper 64 bits will be random, excepting the IETF marker.
+
+ */
+case class Uuid(id: Long, groupId: Int, uniqId: Long) {
+  // we blatantly ignore the groupId in a max check
+  def max(other: Uuid) = this.id > other.id
+
+  /**
+   * Just the id and the groupId
+   * eg. 12-66df, 2a-6afa
+   * 6df is the groupId, afa is the groupId
+   */
   val shortId:String = {
     val ShortIdReg = """[0\-]*([\da-fA-F\-]+-[\da-fA-F]{4})-[\da-fA-F]{4}-[\da-fA-F]{12}""".r
     val ShortIdReg(shortId) = uuid
     shortId
   }
-}
 
-// http://www.coderanch.com/t/493983/java/java/UUID-Long-Integer
-object Uuid {
-
-  def secureRandom = new SecureRandom();
+  override def toString = uuid
 
   /*
-
-A UUID is comprised of two 64bit longs.
-[       lower    ] [    upper      ]
-00000000-0000-6000-a000-000000000000
-                    -----------------
-                    60 bits Random bits (time or other)
-                   -
-                   x == a, b, 8 or 9 - we will use 'a'
-               ---
-               Group ID - of 12 bits value is (0 to 4095)
-              - 
-              4 == always for (Version 4, Random UUID)
--------- ----
-Primary key ID of 48 bits  (max 281,474,976,710,656)
-
-Essentially, the ID and the Group ID of the object
-will be found in the lower 64 bits, separated in the UUID by the '4' (the version).
-The other upper 64 bits will be random, excepting the IETF marker.
-
+   * See the companion object for what this all means
    */
+  val uuid = new java.util.UUID(groupId |
+           (Uuid.UUID_VERSION << Uuid.UUID_VERSION_OFFSET) |
+           (id << Uuid.ID_OFFSET), (Uuid.UUID_VARIANT << Uuid.UUID_VARIANT_OFFSET) |
+           (uniqId >>> 4)).toString
+}
+
+object Uuid {
+
+
   val UUID_VERSION = 6L
-  val UUID_VARIANT = 10L
+  val UUID_VARIANT = 10L   // a as the variant
 
   val ID_OFFSET = 16
   val UUID_VERSION_OFFSET = 12
   val UUID_VARIANT_OFFSET = 60
-
-  def fromJavaUuid(javaUuid: java.util.UUID) = Uuid(javaUuid.toString())
-  def empty() = new Uuid("ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb")
-
-  /**
-   * Create a new UUID given a Class Name and an already sequenced ID
-   */
-  def createUuid(groupName: String, id: Long): Uuid = {
-    val randomBytes = new Array[Byte](8)
-    secureRandom.nextBytes(randomBytes)
-    val randomLong = java.nio.ByteBuffer.wrap(randomBytes).getLong()
-    return createUuid(groupId(groupName), id, randomLong)
-  }
-
-
-  /**
-   * Create a Long, specifying the class for a group ID, the ID and the end Long
-   * The end Long is typically a timestamp
-   *
-   * @param groupName typically the class name
-   * @param id
-   * @return
-   */
-  def createUuid(groupName: String, id: Long, upperLong: Long): Uuid = createUuid(groupId(groupName), id, upperLong)
-
-  /**
-   * Create a new UUID given some ID as the groupID and an already sequenced ID
-   */
-  def createUuid(groupId: Int, id: Long, upperLong: Long): Uuid = {
-    // groupID has to be 12bits as the 4L is going in over the top.
-    return Uuid(new java.util.UUID(groupId | (UUID_VERSION << UUID_VERSION_OFFSET) | (id << ID_OFFSET), (UUID_VARIANT << UUID_VARIANT_OFFSET) | (upperLong >>> 4)).toString())
-  }
 
   /**
    * Create a partial Uuid .. the last part
@@ -107,13 +91,32 @@ The other upper 64 bits will be random, excepting the IETF marker.
   def createPartialUuidString(groupName: String, id: Long): String = createPartialUuidString(groupId(groupName), id)
 
   /**
+   * Create a Uuid object from the standard UUID String
+   * @param uuid
+   * @return
+   */
+  def apply(uuid:String):Uuid = {
+
+    val uuidMatchString = """([\da-fA-F]{8})-([\da-fA-F]{4})-""" +  // two parts of the ID
+      UUID_VERSION.toHexString               +  // '6'
+      """([\da-fA-F]{3})-"""                  +  // groupId
+      UUID_VARIANT.toHexString               +  // 'a'
+      """([\da-fA-F]{3})-([\da-fA-F]{12})"""
+
+    val uuidRegex = uuidMatchString.r
+    val uuidRegex(id0,id1,groupId,uniq0,uniq1) = uuid
+    val tId = java.lang.Long.parseLong(id0+id1,16)
+    val tUniqId = java.lang.Long.parseLong(uniq0+uniq1,16)
+    val tGroupId = Integer.parseInt(groupId)
+    return new Uuid(tId,tGroupId,tUniqId)
+  }
+
+  /**
    * Determine a Group Id for a Class
    */
-  def groupId(groupName : String) = hash(groupName)
+  def groupId(groupName : String) = crc12(groupName)
 
-  def hash(toHash: String) = crc12(toHash)
-  
-  def crc12(toHash: String) = {
+  private def crc12(toHash: String) = {
 
     /**
      * ************************************************************************
@@ -144,4 +147,3 @@ The other upper 64 bits will be random, excepting the IETF marker.
   }
 
 }
-

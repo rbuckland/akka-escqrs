@@ -16,47 +16,56 @@
 
 package io.straight.fw.model
 
-import scala.collection.mutable.Map
-import java.lang.reflect.{ Type, ParameterizedType }
+import scala.collection.mutable.{Map => MutableMap}
 import scala.reflect.ClassTag
+import java.util.Date
+import io.straight.fw.StraightIOBaseException
 
+
+case class StraightIOUuidException(error: String) extends StraightIOBaseException(error,null)
 
 /**
- * The IDGenerator Actor
+ * The IDGenerator. This trait could live on a completely separate
+ * actor to the Event sourced one, and all AbstractProcesssor (shared aggregates) would
+ * communicate with it to get keys (completely do-able) and not tested.
+ *
+ * @author rbuckland_
  */
-trait UuidGenerator[D] {
+trait UuidGenerator[T <: UuidBaseDomain] extends IdGenerator[Uuid,T] {
   
-  private val ids = Map.empty[String, Long]
+  private var ids = MutableMap.empty[String, Long]
 
-  def className()(implicit t: ClassTag[D]) = t.runtimeClass.getCanonicalName
+  val klass: Class[_]
+  val klassName = klass.getCanonicalName
 
   /**
    * return the next ID
    * @param upperLong typically a timestamp (externally sourced, so that replays will work)
    */
-  def newUuid(upperLong: Long)(implicit t: ClassTag[D]): Uuid = {
-    val idKey = className
-    val currentId = ids.getOrElseUpdate(idKey, 0L)
-    ids += (idKey -> (currentId + 1))
-    return Uuid.createUuid(className, currentId + 1, upperLong)
+  def newUuid(upperLong: Long): Uuid = {
+
+    ids += (klassName -> (currentId + 1))
+    return Uuid(currentId + 1,Uuid.groupId(klassName),upperLong)
   }
-    
+
+  override def newId :Uuid = newUuid(new Date().getTime)
+
+  private def currentId() = ids.getOrElseUpdate(klassName, 0L)
+
   /**
    * We need this guy be running as an Actor .. return the next ID. Processed inside a transaction
    */
-  def setStartingId(startingId: Long)(implicit t: ClassTag[D]): Long = {
+  override def setStartingId(startingUuid: Uuid): Unit = {
 
-      val idKey = className
-      val currentId = ids.getOrElseUpdate(idKey, 0L)
+      val anewId = startingUuid.id
 
       // not allowed to set the starting ID to be less that the current used up number
-      if (currentId >= startingId) {
-        throw new Exception("Starting Id too low (" + startingId + "). It cannot be less than (" + currentId + ")")
+      if (currentId >= anewId) {
+        throw new StraightIOUuidException("Starting Id too low (" + startingUuid + "). It cannot be less than (" + currentId + ")")
       } else {
-        ids += (idKey -> startingId)
+        ids += (klassName -> anewId)
       }
-      return startingId
   }
-  
-
 }
+
+
