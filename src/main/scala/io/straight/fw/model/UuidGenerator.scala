@@ -44,7 +44,7 @@ class UuidGenerator[T <: UuidBaseDomain](val klass: Class[T]) extends IdGenerato
   def newUuid(upperLong: Long): Uuid = {
 
     ids += (klassName -> (currentId + 1))
-    return Uuid(currentId + 1,Uuid.groupId(klassName),upperLong)
+    return Uuid(currentId,Uuid.groupId(klassName),upperLong)
   }
 
   override def newId :Uuid = newUuid(new Date().getTime)

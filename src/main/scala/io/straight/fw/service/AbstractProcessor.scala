@@ -72,11 +72,10 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
 
     case "ResetPrimaryKeyId" =>
 
-      log.debug("recovery finished. repo id is: " + idGenerator.potentialNextId)
+      log.debug("Recovery is Complete - " + repository.getKeys.size + " objects loaded. Will now reset key ID")
       // recovery has finished .. so set the ID on the repo
       idGenerator.setStartingId(repository.maxId)
-
-      log.debug("recovery finished. repo id is now: " + idGenerator.potentialNextId)
+      log.debug("Repository Key Reset - Next ID is: " + idGenerator.potentialNextId)
 
       unstashAll()
 
