@@ -36,7 +36,6 @@ object DomainValidationMarshaller {
     Marshaller[DomainValidation[T]] { (value,ctx) =>
       value match {
         case Success(result) => {
-          logger.info("going to marshall " + result.getClass)
           m.apply(result, ctx)
         }
         case Failure(errors) => throw ValidationException(errors)
