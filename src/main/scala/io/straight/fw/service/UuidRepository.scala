@@ -39,5 +39,5 @@ class UuidRepository[A <: UuidBaseDomain] extends Repository[Uuid,A] {
 
   }
 
-  override def maxId: Uuid = getKeys.foldLeft(Uuid(-1,-1,-1)){ (a,b) => if (a.max(b)) a else b }
+  override def maxId: Uuid = getKeys.foldLeft(Uuid(0,0,0)){ (a,b) => if (a.max(b)) a else b }
 }
