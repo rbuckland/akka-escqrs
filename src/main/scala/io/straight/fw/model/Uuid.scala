@@ -45,6 +45,13 @@ The other upper 64 bits will be random, excepting the IETF marker.
 case class Uuid(id: Long, groupId: Int, uniqId: Long) {
   // we blatantly ignore the groupId in a max check
   def max(other: Uuid) = this.id > other.id
+  /*
+   * See the companion object for what this all means
+   */
+  val uuid = new java.util.UUID(groupId |
+    (Uuid.UUID_VERSION << Uuid.UUID_VERSION_OFFSET) |
+    (id << Uuid.ID_OFFSET), (Uuid.UUID_VARIANT << Uuid.UUID_VARIANT_OFFSET) |
+    (uniqId >>> 4)).toString
 
   /**
    * Just the id and the groupId
@@ -59,13 +66,7 @@ case class Uuid(id: Long, groupId: Int, uniqId: Long) {
 
   override def toString = uuid
 
-  /*
-   * See the companion object for what this all means
-   */
-  val uuid = new java.util.UUID(groupId |
-           (Uuid.UUID_VERSION << Uuid.UUID_VERSION_OFFSET) |
-           (id << Uuid.ID_OFFSET), (Uuid.UUID_VARIANT << Uuid.UUID_VARIANT_OFFSET) |
-           (uniqId >>> 4)).toString
+
 }
 
 object Uuid {
@@ -83,12 +84,12 @@ object Uuid {
    * ::
    * :: The beginning is always 0
    */
-  def createPartialUuidString(groupId: Int, id: Long): String = new java.util.UUID(groupId | (UUID_VERSION << UUID_VERSION_OFFSET) | (id << ID_OFFSET), 0L).toString().substring(0, 18)
+  def createPartialUuidString(id: Long, groupId: Int): String = new java.util.UUID(groupId | (UUID_VERSION << UUID_VERSION_OFFSET) | (id << ID_OFFSET), 0L).toString().substring(0, 18)
 
   /**
    * A Class name version
    */
-  def createPartialUuidString(groupName: String, id: Long): String = createPartialUuidString(groupId(groupName), id)
+  def createPartialUuidString(id: Long, groupName: String): String = createPartialUuidString(id, groupId(groupName))
 
   /**
    * Create a Uuid object from the standard UUID String

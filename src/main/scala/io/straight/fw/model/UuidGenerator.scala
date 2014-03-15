@@ -31,11 +31,10 @@ case class StraightIOUuidException(error: String) extends StraightIOBaseExceptio
  *
  * @author rbuckland_
  */
-trait UuidGenerator[T <: UuidBaseDomain] extends IdGenerator[Uuid,T] {
+class UuidGenerator[T <: UuidBaseDomain](val klass: Class[T]) extends IdGenerator[Uuid,T] {
   
   private var ids = MutableMap.empty[String, Long]
 
-  val klass: Class[_]
   val klassName = klass.getCanonicalName
 
   /**
@@ -44,13 +43,19 @@ trait UuidGenerator[T <: UuidBaseDomain] extends IdGenerator[Uuid,T] {
    */
   def newUuid(upperLong: Long): Uuid = {
 
-    ids += (klassName -> (currentId + 1))
-    return Uuid(currentId + 1,Uuid.groupId(klassName),upperLong)
+    ids += (klassName -> (sequenceId + 1))
+    return Uuid(sequenceId + 1,Uuid.groupId(klassName),upperLong)
   }
 
   override def newId :Uuid = newUuid(new Date().getTime)
 
-  private def currentId() = ids.getOrElseUpdate(klassName, 0L)
+  private def sequenceId() = ids.getOrElseUpdate(klassName, 0L)
+
+  /**
+   * A potential next Id  (you can't use it though as it won't really be the next ID (time based remember!!)
+   * @return
+   */
+  def potentialNextId = Uuid(sequenceId + 1,Uuid.groupId(klassName),new Date().getTime)
 
   /**
    * We need this guy be running as an Actor .. return the next ID. Processed inside a transaction
@@ -60,8 +65,8 @@ trait UuidGenerator[T <: UuidBaseDomain] extends IdGenerator[Uuid,T] {
       val anewId = startingUuid.id
 
       // not allowed to set the starting ID to be less that the current used up number
-      if (currentId >= anewId) {
-        throw new StraightIOUuidException("Starting Id too low (" + startingUuid + "). It cannot be less than (" + currentId + ")")
+      if (sequenceId >= anewId) {
+        throw new StraightIOUuidException("Starting Id too low (" + startingUuid + "). It cannot be less than (" + sequenceId + ")")
       } else {
         ids += (klassName -> anewId)
       }

@@ -11,11 +11,12 @@ import scala.reflect.ClassTag
 import scalaz.Success
 import scalaz.Failure
 import scala.Some
+import akka.actor.ActorLogging
 
 /**
  * @author rbuckland
  */
-trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I <: Any] extends EventsourcedProcessor {
+trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I <: Any] extends EventsourcedProcessor with ActorLogging {
 
   self ! "ResetPrimaryKeyId"
 
@@ -26,7 +27,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
    * T is the Domain Object (extends from BaseDomain)
    *
    */
-  protected def repository: Repository[I,T]
+  def repository: Repository[I,T]
 
   /**
    * Each time we create a new Domain Object, we need a new ID.
@@ -40,7 +41,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
    *
    * @return
    */
-  protected def idGenerator: IdGenerator[I,T]
+  def idGenerator: IdGenerator[I,T]
 
   /**
    * Aggregate *ahh fancy*. This is the Base Domain Object classname
@@ -50,23 +51,43 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
    */
   def aggregateClassName()(implicit t: ClassTag[T]) = t.runtimeClass.getCanonicalName
 
-  override def receive = initializing.orElse(active)
+  /**
+   * This is where the commands wilkl come in
+   * @return
+   */
+  def processCommand: Receive
 
+
+  /**
+   * We need to hijack the receiveCommand so we can capture a recovery state
+   * @return
+   */
+  override def receiveCommand = initializing.orElse(active)
+
+  /**
+   * If we are initializing, (and now receiving our messages)
+   * @return
+   */
   def initializing: Receive = {
+
     case "ResetPrimaryKeyId" =>
 
+      log.debug("recovery finished. repo id is: " + idGenerator.potentialNextId)
       // recovery has finished .. so set the ID on the repo
       idGenerator.setStartingId(repository.maxId)
 
+      log.debug("recovery finished. repo id is now: " + idGenerator.potentialNextId)
+
       unstashAll()
+
       context.become(active)
+
     case other if recoveryFinished =>
       stash()
+
   }
 
-  def active: Receive = super.receive
-
-  protected val log = Logging(context.system, this)
+  def active: Receive = processCommand
 
   /**
    * A call to the repository
@@ -122,7 +143,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
 }
 
 trait AbstractService[T <: BaseDomain[I], I <: Any] {
-  protected def repository: Repository[I,T]
+  def repository: Repository[I,T]
   def get(id: I): Option[T] = repository.getByKey(id)
   def getMap = repository.getMap
   def getAll: Iterable[T] = repository.getValues

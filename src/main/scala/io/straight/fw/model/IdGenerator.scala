@@ -24,4 +24,11 @@ trait IdGenerator[I <: Any,T <: BaseDomain[I]] {
    */
   def setStartingId(id: I): Unit
 
+  /**
+   * Return the potential Next Id - of course there is no guarantees that ca call to
+   * newId will give ytou this .. it is just helpful for debugging purposes. (logging etc)
+   * @return
+   */
+  def potentialNextId: I
+
 }

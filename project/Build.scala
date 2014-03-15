@@ -100,7 +100,7 @@ object Dependencies {
     // Test Dependencies
     //
     "org.scala-lang" % "scala-actors" % Version.Scala % "test",
-    "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+    "org.scalatest" %% "scalatest" % "2.1.0" % "test",
     "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test",
     "junit" % "junit" % "4.8" % "test"
 
