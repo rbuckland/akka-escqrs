@@ -80,6 +80,17 @@ object JacksonMarshaller extends JacksonMapper {
     }
   }
 
+  implicit def basicBaseDomainMarshaller[A <: UuidBaseDomain]:spray.httpx.marshalling.Marshaller[A] = {
+    Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
+    }
+  }
+
+  // this one doesn't help. because I is not resolved for it :-( -- make ones like the above.
+  // otherwise your erorr message is ..
+
+  // could not find implicit value for parameter marshaller: spray.httpx.marshalling.ToResponseMarshaller[scala.concurrent.Future[ ....
+
   implicit def basicBaseDomainMarshaller[A <: BaseDomain[I], I <: Any]:spray.httpx.marshalling.Marshaller[A] = {
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
       ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
