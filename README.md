@@ -2,7 +2,22 @@ io-straight-fw
 ==============
 
 
-straight.io - eventsourced + spray.io
+straight.io Framework
+
+akka-persistence and DDD
+This support library is a buch of support classes that will help you build an awesome 
+
+CQRS + Event Sourced + DDD base application using akka-persistence event sourcing.
+There are support modules for spray.io and (un)Marshalling so youi don't have to think as well. (currently these are embedded in).
+
+Supported Versions are 
+
+spray.io : 1.3.0
+akka-persistence : 2.3.0
+akka : 2.3.0
+Scala : 2.10.2
+
+And a biunch of other dependencies to boot!
 
 # Overview
 
