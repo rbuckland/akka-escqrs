@@ -12,16 +12,16 @@ import org.joda.time.DateTime
  *
  * For example:
  *
- * abstract class PersonNewCommand(val messageTimestamp: DateTime) extends CommandType
- * abstract class PersonChangeCommand(val id: Uuid, val expectedVersion: Long, val messageTimestamp: DateTime) extends CommandType
- * abstract class PersonNewEvent(val id: Uuid, val messageTimestamp: DateTime) extends EventType
- * abstract class PersonChangeEvent(val id: Uuid, expectedVersion: Long, messageTimestamp: DateTime) extends EventType
+ * abstract class PersonNewCommand(val timestamp: DateTime) extends CommandType
+ * abstract class PersonChangeCommand(val id: Uuid, val expectedVersion: Long, val timestamp: DateTime) extends CommandType
+ * abstract class PersonNewEvent(val id: Uuid, val timestamp: DateTime) extends EventType
+ * abstract class PersonChangeEvent(val id: Uuid, expectedVersion: Long, timestamp: DateTime) extends EventType
  *
  * @author rbuckland
  */
 package object messages {
 
-   type MessageType = AnyRef{def messageTimestamp: DateTime}
+   type MessageType = AnyRef{def timestamp: DateTime}
    type EventType = MessageType
    type CommandType = MessageType
 
