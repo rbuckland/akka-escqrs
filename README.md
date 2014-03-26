@@ -1,8 +1,7 @@
 io-straight-fw
 ==============
 
-
-straight.io - eventsourced + spray.io
+straight.io - akka-persistence + spray.io
 
 # Overview
 
@@ -14,10 +13,8 @@ This is a simple set of helper classes for building web apps with
 
 # TODO
 
-- Refactor out the repository code so you can choose between an Integer based one and a UUID one
-- Remove old code!
+- (See the Issues list for more)
 - Create a whole sample that is using the Domain architecture
-
 
 # Some Samples
 

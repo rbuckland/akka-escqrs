@@ -1,22 +1,20 @@
 package io.straight.fw.service
 
-import akka.event.Logging
 import io.straight.fw.model._
 import scalaz._
 import Scalaz._
 import akka.persistence.EventsourcedProcessor
 import scala.reflect.runtime.universe._
-import io.straight.fw.messages.{BaseEvent, BaseCommand}
+import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
 import scalaz.Success
 import scalaz.Failure
-import scala.Some
 import akka.actor.ActorLogging
 
 /**
  * @author rbuckland
  */
-trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I <: Any] extends EventsourcedProcessor with ActorLogging {
+trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
 
   self ! "ResetPrimaryKeyId"
 
@@ -100,8 +98,8 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
    * @return
    */
   val receiveRecover: Receive = {
-    case evt: BaseEvent => {
-      updateRepository(eventToDomainObject(evt.asInstanceOf[E]))
+    case evt: EventType => {
+      updateRepository(domainObjectFromEvent(evt.asInstanceOf[E]))
     }
     // TODO case SnapshotOffer(_, snapshot: ExampleState) => state = snapshot
   }
@@ -116,7 +114,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
    * @param event The event that makes a change
    * @return T doaminObject of type T
    */
-  def eventToDomainObject(event: E): T
+  def domainObjectFromEvent(event: E): T
 
   /**
    * Our magical Process method.
@@ -131,7 +129,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
     fvalidate match {
       case f @ Failure(error) => sender ! f
       case s @ Success(event) => persist(event) { e =>
-         val obj = eventToDomainObject(e)
+         val obj = domainObjectFromEvent(e)
          updateRepository(obj);
          context.system.eventStream.publish(e) // publish to our subscribers the event we just created
          sender ! obj.success // return the object as a domain validation success back to the sender
@@ -139,11 +137,13 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: BaseEvent, C <: BaseCommand, I 
     }
   }
 
+  def toDomainValidation(validation: DomainValidation[E]):DomainValidation[T] = {
+    // if the event creation failed, return the error as as DomainObject (T) DomainValidation
+    // otherwise run the function that gives us an Object from an Event
+    // this function is implemented by the implementor :-)
+    validation.fold[DomainValidation[T]](error => error.fail,event => domainObjectFromEvent(event).success)
+  }
+
 }
 
-trait AbstractService[T <: BaseDomain[I], I <: Any] {
-  def repository: Repository[I,T]
-  def get(id: I): Option[T] = repository.getByKey(id)
-  def getMap = repository.getMap
-  def getAll: Iterable[T] = repository.getValues
-}
+

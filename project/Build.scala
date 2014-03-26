@@ -7,9 +7,9 @@ object Settings {
 }
 
 object Version {
-  val Scala = "2.10.2"
+  val Scala = "2.10.3"
   val Akka = "2.3.0"
-  val Spray = "1.3.0"
+  val Spray = "1.3.1"
   val Jackson = "2.2.1"
 }
 
@@ -25,7 +25,7 @@ object RootBuild extends Build {
   lazy val root = Project(
           id = "io-straight-fw", 
           base = file("."))
-   .settings(libraryDependencies ++= commonDeps ++ commonDeps ++ sprayDeps ++ akkaPersistence ++ jackson ++ subcut ++ googleApiDep)
+   .settings(libraryDependencies ++= commonDeps ++ commonDeps ++ sprayDeps ++ akkaPersistence ++ jackson)
 }
 
 /**
@@ -33,9 +33,6 @@ object RootBuild extends Build {
  */
 object Dependencies {
 
-  val googleApiDep = Seq(
-    "com.google.api.client" % "google-api-client" % "1.4.1-beta" % "compile"
-  )
 
   val sprayDeps =
       Seq(
@@ -50,11 +47,9 @@ object Dependencies {
 
   val akkaPersistence = Seq(
     // akka persistence
-    "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.0-RC4" % "compile"
+    "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.0" % "compile"
   )
-  val subcut = Seq(
-    "com.escalatesoft.subcut" %% "subcut" % "2.0" % "compile"
-  )
+
 
   val jackson = Seq(
     //

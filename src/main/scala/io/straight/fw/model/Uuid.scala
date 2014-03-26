@@ -16,31 +16,31 @@
 
 package io.straight.fw.model
 
-import java.security.SecureRandom
-
-/*
+/**
+ * Refer to http://rbtech.blogspot.co.uk/2013/10/embedding-primary-key-in-uuid-guid-for.html
+ *
  * This Uuid Class internally stores the 3 values we care about
  *
  * Two others are fixed  (version and variant)
  *
-A UUID is comprised of two 64bit longs.
-[       lower    ] [    upper      ]
-00000000-0000-6000-a000-000000000000
-                  -----------------
-                  60 bits Random bits (time or other)
-                 -
-                 x == a, b, 8 or 9 - we will use 'a'
-             ---
-             Group ID - of 12 bits value is (0 to 4095)
-            -
-            6 == always for (Version 6 -- because we can (we are not really UUID's)
--------- ----
-Primary key ID of 48 bits  (max 281,474,976,710,656)
-
-Essentially, the ID and the Group ID of the object
-will be found in the lower 64 bits, separated in the UUID by the '6' (the version).
-The other upper 64 bits will be random, excepting the IETF marker.
-
+ * {{{
+ * A UUID is comprised of two 64bit longs.
+ * [       lower    ] [    upper      ]
+ * 00000000-0000-6000-a000-000000000000
+ *                    -----------------
+ *                    60 bits Random bits (time or other)
+ *                    -
+ *                    x == a, b, 8 or 9 - we will use 'a'
+ *               ---
+ *               Group ID - of 12 bits value is (0 to 4095)
+ *              -
+ *              6 == always for (Version 6 -- because we can (we are not really UUID's)
+ * -------- ----
+ * Primary key ID of 48 bits  (max 281,474,976,710,656)
+ * }}}
+ * Essentially, the ID and the Group ID of the object
+ * will be found in the lower 64 bits, separated in the UUID by the '6' (the version).
+ * The other upper 64 bits will be random, excepting the IETF marker.
  */
 case class Uuid(id: Long, groupId: Int, uniqId: Long) {
   // we blatantly ignore the groupId in a max check
@@ -65,7 +65,6 @@ case class Uuid(id: Long, groupId: Int, uniqId: Long) {
   }
 
   override def toString = uuid
-
 
 }
 

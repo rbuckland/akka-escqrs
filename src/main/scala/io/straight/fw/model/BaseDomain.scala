@@ -22,17 +22,16 @@ import com.fasterxml.jackson.annotation.JsonGetter
 import io.straight.fw.jackson.JacksonBindingSupport._
 
 /**
- * BaseDomain where we find the uuid.
+ * BaseDomain where we find an ID and a version
+ *
+ * ID could be a Long, or in my case, I use the special Uuid class.
  *
  * This class has no "ID" as it is not intended to be externally remembered.
  * All Domain objects will extend from this, however - therefore all will have a UUID for storage etc.
  *
- * Versioning is tied on the UUID, and not the ID. 
- *
  * uuid will be globally unique
  * the id will be Class Domain unique (a class primary key)
  *
- * TODO remove the reliance on UUID here (for people that want to use ID as the key)
  */
 abstract class BaseDomain[I <: Any](
                            // for some reason, when these are addedd to the abstract class and overidden in subclasses

@@ -1,7 +1,7 @@
 package io.straight.fw.service
 
 import scala.reflect.ClassTag
-import io.straight.fw.messages.{BaseEvent, BaseCommand}
+import io.straight.fw.messages.{EventType, CommandType}
 import io.straight.fw.model._
 import scalaz._
 import Scalaz._
@@ -10,7 +10,7 @@ import scala.Some
 /**
  * @author rbuckland
  */
-trait UuidAbstractProcessor[T <: UuidBaseDomain, E <: BaseEvent, C <: BaseCommand] extends AbstractProcessor[T,E,C,Uuid] {
+trait UuidAbstractProcessor[T <: UuidBaseDomain, E <: EventType, C <: CommandType] extends AbstractProcessor[T,E,C,Uuid] {
 
 
   val repository: UuidRepository[T]

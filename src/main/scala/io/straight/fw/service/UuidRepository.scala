@@ -20,7 +20,7 @@ class UuidRepository[A <: UuidBaseDomain] extends Repository[Uuid,A] {
    * iiiiiiii-iiii-6xxx-a000-0000
    * where the i's are the sequential ID
    *
-   * So this will just find (in the repo) the objevct where the UUID id matches
+   * So this will just find (in the repo) the object where the UUID id matches
    *
    * @return
    */

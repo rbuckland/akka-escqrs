@@ -23,7 +23,10 @@ import io.straight.fw.StraightIOBaseException
 
 /**
  * This exception is used to throw up through the spray hierachy.
+ *
+ * TODO sort out the Validation components that spray uses now (v1.3.1)
  * https://groups.google.com/forum/#!msg/spray-usersecurity/D0d5ZJcvkoo/fxHzwH7YYq0J
+ *
  */
 case class ValidationException(errors: List[String]) extends StraightIOBaseException(errors.toString,null)
 
