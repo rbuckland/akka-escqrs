@@ -31,7 +31,7 @@ case class StraightIOUuidException(error: String) extends StraightIOBaseExceptio
  *
  * @author rbuckland_
  */
-class UuidGenerator[T <: UuidDomainType](val klass: Class[T]) extends IdGenerator[Uuid,T] {
+class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenerator[Uuid,T] {
   
   private var ids = MutableMap.empty[String, Long]
 

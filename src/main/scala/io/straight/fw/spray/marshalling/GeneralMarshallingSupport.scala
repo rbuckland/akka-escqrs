@@ -26,14 +26,15 @@ import spray.http.{MediaType, HttpEntity, ContentTypeRange}
 import io.straight.fw.model.validation.ValidationException
 
 
-object DomainValidationMarshaller {
-
-  val logger = LoggerFactory.getLogger(this.getClass())
-
-  import io.straight.fw.model.validation.scalaz._
-
+/**
+ * Marshal a Scalaz Domain Validation Object
+ */
+object SZDomainValidationMarshaller {
+  val logger = LoggerFactory.getLogger(this.getClass)
+  import scalaz._
+  import io.straight.fw.model.validation.sz.SZDomainValidation
   implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
-    Marshaller[DomainValidation[T]] { (value,ctx) =>
+    Marshaller[SZDomainValidation[T]] { (value,ctx) =>
       value match {
         case Success(result) => {
           logger.info("going to marshall " + result.getClass)
@@ -43,6 +44,26 @@ object DomainValidationMarshaller {
       }
   }
 }
+
+/**
+ * Marshal an Either Domain Validation Object
+ */
+object EitherDomainValidationMarshaller {
+  import io.straight.fw.model.validation.simple.EitherDomainValidation
+  val logger = LoggerFactory.getLogger(this.getClass)
+  import scalaz._
+  implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
+    Marshaller[EitherDomainValidation[T]] { (value,ctx) =>
+      value match {
+        case Right(result) => {
+          logger.info("going to marshall " + result.getClass)
+          m.apply(result, ctx)
+        }
+        case Left(errors) => throw ValidationException(errors)
+      }
+    }
+}
+
 
 object JacksonUnmarshaller extends JacksonMapper {
   def apply[T: Manifest]: Unmarshaller[T] =
@@ -70,37 +91,36 @@ object JacksonUnmarshaller extends JacksonMapper {
 object JacksonMarshaller extends JacksonMapper {
 
   
-  val logger = LoggerFactory.getLogger(this.getClass())
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   def marshal(mediaType: MediaType, value: Any): String = {
     mediaType match {
       case `text/xml` | `application/xml` => serializeXml(value)
       case `application/json` => serializeJson(value)
-      case _ => ("Error - the marshaller doesn't support " + mediaType.toString)
+      case _ => "Error - the marshaller doesn't support " + mediaType.toString
     }
   }
 
-  implicit def basicUuidBaseDomainMarshaller[A <: UuidBaseDomain]:spray.httpx.marshalling.Marshaller[A] = {
+  implicit def basicUuidBaseDomainMarshaller[A <: DomainType[Uuid]]:spray.httpx.marshalling.Marshaller[A] = {
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
-      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes))
     }
   }
 
   // this one doesn't help. because I is not resolved for it :-( -- make ones like the above.
-  // otherwise your erorr message is ..
-
+  // otherwise your error message is ..
   // could not find implicit value for parameter marshaller: spray.httpx.marshalling.ToResponseMarshaller[scala.concurrent.Future
 
-  implicit def basicBaseDomainMarshaller[A <: BaseDomain[I], I <: Any]:spray.httpx.marshalling.Marshaller[A] = {
+  implicit def basicBaseDomainMarshaller[A <: DomainType[I], I <: Any]:spray.httpx.marshalling.Marshaller[A] = {
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
-      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes))
     }
   }
 
 
   implicit def basicContainerMarshaller[A <: BasicMarshallable]:spray.httpx.marshalling.Marshaller[A] =
     Marshaller.of[A](`application/json`, `text/xml`, `application/xml`) { (value, contentType, ctx) =>
-      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes()))
+      ctx.marshalTo(HttpEntity(contentType, marshal(contentType.mediaType, value).getBytes))
     }
 
 

@@ -7,6 +7,6 @@ import io.straight.fw.model.DomainError
  */
 package object simple {
 
-  type EitherDomainValidation[T] = Either[DomainError,T]
+  type EitherDomainValidation[+T] = Either[DomainError,T]
 
 }

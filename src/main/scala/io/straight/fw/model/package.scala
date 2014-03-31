@@ -24,11 +24,13 @@ package object model {
     def apply(msg: String): DomainError = List(msg)
   }
 
-  // the validation type must implement isSuccess and isFailure, asSuccess and asFailure
-  type ValidationBase[T] = AnyRef {
-    def isSuccess: Boolean
-    def isFailure:Boolean
-  }
+  // I was unable to co-erce the Either into this as well as have a nice Support trait.
+  // the answer is actually how the scalaz does it ! :-) (They have a sealed trait in there)
+  //  // the validation type must implement isSuccess and isFailure, asSuccess and asFailure
+  //  type ValidationBase[+T] = AnyRef {
+  //    def isSuccess: Boolean
+  //    def isFailure:Boolean
+  //  }
 
   type DomainType[I] = AnyRef{
     def id: I

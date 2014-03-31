@@ -1,8 +1,9 @@
 package io.straight.fw.service
 
-import io.straight.fw.model.{UuidBaseDomain, Uuid, BaseDomain}
+import io.straight.fw.model.{DomainType, Uuid}
+import scala.language.reflectiveCalls
 
-class UuidRepository[A <: UuidBaseDomain] extends Repository[Uuid,A] {
+class UuidRepository[A <: DomainType[Uuid]] extends Repository[Uuid,A] {
 
   /**
    * Iterable list objects by a partial match on the UUID

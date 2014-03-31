@@ -19,6 +19,7 @@ package io.straight.fw.service
 import scala.concurrent.stm.Ref
 import scala.collection.immutable.TreeMap
 import io.straight.fw.model.DomainType
+import scala.language.reflectiveCalls
 
 /**
  * A Wrapper around an STM Ref of a SortedMap.

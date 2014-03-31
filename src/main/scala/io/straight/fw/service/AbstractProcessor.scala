@@ -6,18 +6,20 @@ import akka.persistence.EventsourcedProcessor
 import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
 import akka.actor.ActorLogging
+import scala.language.reflectiveCalls
 
 /**
  * D is your Domain Class (e.g. Person, Robot, Widget, ShopBooking, CarSale, TreeLoppingAppointment]
  *   Implement a class that looks like DomainType
- * V is your ValidationBase Object that wraps your D and E (Scalaz or Either)  (it must implement isSuccess and isFailure)
+ * VE is the validation class for Events
+ * VD is the validation class for Domain Object
  * E is your EventType - we use a type class here - your messae must implement a { def timestamp: Long }
  * C is your CommandType - we use a type class here - your messae must implement a { def timestamp: Long }
  * I is the ID of your domain class (a Long, or a String, or a Uuid .. we have a sample custom Uuid in this project)
  *
  * @author rbuckland
  */
-trait AbstractProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
+trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
 
   self ! "ResetPrimaryKeyId"
 
@@ -126,9 +128,9 @@ trait AbstractProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I 
    */
 
   // TODO implement Command Logging (not sourcing) .. so use this later
-  def process(fvalidate: => ValidationBase[E]): Unit = {
+  def process(fvalidate: => VE): Unit = {
     val validation = fvalidate
-    if (validation.isFailure) {
+    if (isFailure(validation)) {
       sender ! toDomainValidationFailure(validation)
     } else {
       val event = toEvent(validation)
@@ -146,7 +148,7 @@ trait AbstractProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I 
   def invalidVersion(obj:D,expected: Long)(implicit t: ClassTag[D]) =
     DomainError(invalidVersionMessage format(t.getClass.getCanonicalName, obj.id, expected, obj.version))
 
-  def versionCheck(obj:D, expectedVersion: Option[Long])(implicit t: ClassTag[D]): ValidationBase[D]
+  def versionCheck(obj:D, expectedVersion: Option[Long])(implicit t: ClassTag[D]): VD
 
   /**
    * return a success of domain object creation
@@ -155,7 +157,7 @@ trait AbstractProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I 
    * @param validation for type Event
    * @return validation for type DomainObject
    */
-  def toDomainValidationFailure(validation: ValidationBase[E]): ValidationBase[D]
+  def toDomainValidationFailure(validation: VE): VD
 
 
   /**
@@ -165,9 +167,24 @@ trait AbstractProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I 
    * @param domainObject
    * @return
    */
-  def toDomainValidationSuccess(domainObject: D): ValidationBase[D]
+  def toDomainValidationSuccess(domainObject: D): VD
 
+  /**
+   * We will call this to make sure that the command call can create an event
+   * (your implementation) either created an Event from the Command or there was
+   * an error with the command. We will take this VE and swap it to a VD via
+   * the toDomainValidationFailure(validation) method
+   *
+   * @param validation
+   * @return
+   */
+  def isFailure(validation: VE): Boolean
 
-  def toEvent(validation: ValidationBase[E]): E
+  /**
+   * Given a validation that ha succeeded, return the success (the event)
+   * @param validation
+   * @return
+   */
+  def toEvent(validation: VE): E
 
 }
