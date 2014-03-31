@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.straight.fw.marshalling
+package io.straight.fw.spray.marshalling
 
 import org.slf4j.LoggerFactory
 import io.straight.fw.model._

@@ -10,7 +10,7 @@ import scala.Some
 /**
  * @author rbuckland
  */
-trait UuidAbstractProcessor[T <: UuidBaseDomain, E <: EventType, C <: CommandType] extends AbstractProcessor[T,E,C,Uuid] {
+trait UuidAbstractProcessor[T <: DomainType[Uuid], E <: EventType, C <: CommandType] extends AbstractProcessor[T,E,C,Uuid] {
 
 
   val repository: UuidRepository[T]

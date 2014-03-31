@@ -15,7 +15,7 @@
  */
 
 
-package io.straight.fw.marshalling
+package io.straight.fw.spray.marshalling
 
 import java.lang.reflect.{ Type, ParameterizedType }
 import com.fasterxml.jackson.core.`type`.TypeReference

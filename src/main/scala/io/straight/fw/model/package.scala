@@ -16,8 +16,6 @@
 
 package io.straight.fw
 
-import scalaz.Validation
-
 package object model {
 
   type DomainError          = List[String]
@@ -25,8 +23,24 @@ package object model {
     def apply(msg: String): DomainError = List(msg)
   }
 
-  // What the? Read on - http://stackoverflow.com/questions/8736164/what-are-type-lambdas-in-scala-and-what-are-their-benefits
-  // The λ[α] are just type Paramaters (like T or A)
-  type DomainValidation[+α] = ({type λ[α]=Validation[DomainError, α]})#λ[α]
+  // the validation type must implement isSuccess and isFailure
+  type ValidationBase[T] = AnyRef[T] { def isSuccess: Boolean; def isFailure:Boolean }
+
+  type IOValidation[V,T] = V[DomainError,T] {
+
+  }
+
+  type EitherValidation[T] = IOValidation[Either,T]
+
+  type DomainType[I] = AnyRef{
+    def id: I
+    def version: Long
+  }
+
+  type UuidDomainType = DomainType[Uuid]{
+    def id: Uuid
+    def version: Long
+  }
+
 
 }

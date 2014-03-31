@@ -1,11 +1,9 @@
 package io.straight.fw.model
 
-import scala.reflect.ClassTag
-
 /**
  * @author rbuckland
  */
-trait IdGenerator[I <: Any,T <: BaseDomain[I]] {
+trait IdGenerator[I <: Any,T <: DomainType[I]] {
 
   /**
    * Method to create a new Id

@@ -1,20 +1,24 @@
 package io.straight.fw.service
 
 import io.straight.fw.model._
-import scalaz._
-import Scalaz._
+
 import akka.persistence.EventsourcedProcessor
-import scala.reflect.runtime.universe._
 import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
-import scalaz.Success
-import scalaz.Failure
 import akka.actor.ActorLogging
+import io.straight.fw.model.scalaz._
 
 /**
+ * D is your Domain Class (e.g. Person, Robot, Widget, ShopBooking, CarSale, TreeLoppingAppointment]
+ *   Implement a class that looks like DomainType
+ * V is your ValidationBase Object that wraps your D and E (Scalaz or Either)  (it must implement isSuccess and isFailure)
+ * E is your EventType - we use a type class here - your messae must implement a { def timestamp: Long }
+ * C is your CommandType - we use a type class here - your messae must implement a { def timestamp: Long }
+ * I is the ID of your domain class (a Long, or a String, or a Uuid .. we have a sample custom Uuid in this project)
+ *
  * @author rbuckland
  */
-trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
+trait AbstractProcessor[D <: DomainType[I], V <: ValidationBase, E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
 
   self ! "ResetPrimaryKeyId"
 
@@ -22,10 +26,10 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
    * Our repository (implement with val constructor)
    *
    * I is the ID (or key) for the repository
-   * T is the Domain Object (extends from BaseDomain)
+   * D is the Domain Object (extends from BaseDomain)
    *
    */
-  def repository: Repository[I,T]
+  def repository: Repository[I,D]
 
   /**
    * Each time we create a new Domain Object, we need a new ID.
@@ -39,7 +43,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
    *
    * @return
    */
-  def idGenerator: IdGenerator[I,T]
+  def idGenerator: IdGenerator[I,D]
 
   /**
    * Aggregate *ahh fancy*. This is the Base Domain Object classname
@@ -47,7 +51,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
    * @param t
    * @return
    */
-  def aggregateClassName()(implicit t: ClassTag[T]) = t.runtimeClass.getCanonicalName
+  def aggregateClassName()(implicit t: ClassTag[D]) = t.runtimeClass.getCanonicalName
 
   /**
    * This is where the commands wilkl come in
@@ -89,7 +93,7 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
   /**
    * A call to the repository
    */
-  private def updateRepository(domainObject: T) = repository.updateMap(domainObject)
+  private def updateRepository(domainObject: D) = repository.updateMap(domainObject)
 
 
   /**
@@ -112,9 +116,9 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
    * We will call updateRepository on your behalf
    * (see process())
    * @param event The event that makes a change
-   * @return T doaminObject of type T
+   * @return D doaminObject of type D
    */
-  def domainObjectFromEvent(event: E): T
+  def domainObjectFromEvent(event: E): D
 
   /**
    * Our magical Process method.
@@ -123,26 +127,46 @@ trait AbstractProcessor[T <: BaseDomain[I], E <: EventType, C <: CommandType, I 
    */
 
   // TODO implement Command Logging (not sourcing) .. so use this later
-  // def process(cmd: C)(fvalidate: => DomainValidation[E]): Unit = {
-  def process(fvalidate: => DomainValidation[E]): Unit = {
+  def process(fvalidate: => V[E]): Unit = {
     // i am sure that there is a better way to do this
     fvalidate match {
-      case f @ Failure(error) => sender ! f
-      case s @ Success(event) => persist(event) { e =>
+      case error @ _ if isFailure(error) => sender ! error
+      case event @ _ if isSuccess(event) => persist(event) { e =>
          val obj = domainObjectFromEvent(e)
-         updateRepository(obj);
+         updateRepository(obj)
          context.system.eventStream.publish(e) // publish to our subscribers the event we just created
-         sender ! obj.success // return the object as a domain validation success back to the sender
+         sender ! toSuccess(obj) // return the object as a domain validation success back to the sender
       }
     }
   }
 
-  def toDomainValidation(validation: DomainValidation[E]):DomainValidation[T] = {
-    // if the event creation failed, return the error as as DomainObject (T) DomainValidation
-    // otherwise run the function that gives us an Object from an Event
-    // this function is implemented by the implementor :-)
-    validation.fold[DomainValidation[T]](error => error.fail,event => domainObjectFromEvent(event).success)
-  }
+  val invalidVersionMessage = "%s(%s): expected version %s doesn't match current version %s"
+
+  def invalidVersion(obj:D,expected: Long)(implicit t: ClassTag[D]) =
+    DomainError(invalidVersionMessage format(t.getClass.getCanonicalName, obj.id, expected, obj.version))
+
+  def versionCheck(obj:D, expectedVersion: Option[Long])(implicit t: ClassTag[D]): V
+
+  /**
+   * Check if the Validation failed (validation that cmd generates an event)
+   * @param eventValidation
+   * @return
+   */
+  def isFailure(eventValidation: V): Boolean = eventValidation.isFailure
+
+  /**
+   * check if the validation succeeded (validation that cmd generates an event)
+   * @param eventValidation
+   * @return
+   */
+  def isSuccess(eventValidation: V): Boolean  = eventValidation.isFailure
+
+  /**
+   * return a success of
+   * @param domainObject
+   * @return
+   */
+  def toSuccess(domainObject: D): V[D]
 
 }
 

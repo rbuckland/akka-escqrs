@@ -90,6 +90,7 @@ object Uuid {
    */
   def createPartialUuidString(id: Long, groupName: String): String = createPartialUuidString(id, groupId(groupName))
 
+
   /**
    * Create a Uuid object from the standard UUID String
    * @param uuid
@@ -110,6 +111,8 @@ object Uuid {
     val tGroupId = Integer.parseInt(groupId)
     return new Uuid(tId,tGroupId,tUniqId)
   }
+
+  def fromString(s:String) = apply(s)
 
   /**
    * Determine a Group Id for a Class

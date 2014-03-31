@@ -12,16 +12,19 @@ import org.joda.time.DateTime
  *
  * For example:
  *
- * abstract class PersonNewCommand(val timestamp: DateTime) extends CommandType
- * abstract class PersonChangeCommand(val id: Uuid, val expectedVersion: Long, val timestamp: DateTime) extends CommandType
- * abstract class PersonNewEvent(val id: Uuid, val timestamp: DateTime) extends EventType
- * abstract class PersonChangeEvent(val id: Uuid, expectedVersion: Long, timestamp: DateTime) extends EventType
+ * abstract class PersonNewCommand(val timestamp: Long)
+ * abstract class PersonChangeCommand(val id: Uuid, val expectedVersion: Long, val timestamp: Long)
+ * abstract class PersonNewEvent(val id: Uuid, val timestamp: Long)
+ * abstract class PersonChangeEvent(val id: Uuid, expectedVersion: Long, timestamp: Long)
+ *
+ * Because the EventType and CommandType are type classes expecting something will implement
+ * timestamp, we don't need out base command and events to extend anything from io.straight.fw
  *
  * @author rbuckland
  */
 package object messages {
 
-   type MessageType = AnyRef{def timestamp: DateTime}
+   type MessageType = AnyRef{def timestamp: Long}  // seconds since 1 Jan 1970 GMT etc
    type EventType = MessageType
    type CommandType = MessageType
 

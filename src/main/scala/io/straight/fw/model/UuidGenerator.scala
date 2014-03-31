@@ -31,7 +31,7 @@ case class StraightIOUuidException(error: String) extends StraightIOBaseExceptio
  *
  * @author rbuckland_
  */
-class UuidGenerator[T <: UuidBaseDomain](val klass: Class[T]) extends IdGenerator[Uuid,T] {
+class UuidGenerator[T <: UuidDomainType](val klass: Class[T]) extends IdGenerator[Uuid,T] {
   
   private var ids = MutableMap.empty[String, Long]
 
@@ -42,12 +42,11 @@ class UuidGenerator[T <: UuidBaseDomain](val klass: Class[T]) extends IdGenerato
    * @param upperLong typically a timestamp (externally sourced, so that replays will work)
    */
   def newUuid(upperLong: Long): Uuid = {
-
     ids += (klassName -> (currentId + 1))
-    return Uuid(currentId,Uuid.groupId(klassName),upperLong)
+    Uuid(currentId(),Uuid.groupId(klassName),upperLong)
   }
 
-  override def newId :Uuid = newUuid(new Date().getTime)
+  override def newId() :Uuid = newUuid(new Date().getTime)
 
   private def currentId() = ids.getOrElseUpdate(klassName, 0L)
 

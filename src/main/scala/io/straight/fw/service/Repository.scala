@@ -18,7 +18,7 @@ package io.straight.fw.service
 
 import scala.concurrent.stm.Ref
 import scala.collection.immutable.TreeMap
-import io.straight.fw.model.BaseDomain
+import io.straight.fw.model.DomainType
 
 /**
  * A Wrapper around an STM Ref of a SortedMap.
@@ -26,7 +26,7 @@ import io.straight.fw.model.BaseDomain
  * To be used by the "Service" class and the "Processor" classes only
  *
  */
-abstract class Repository[K,A <: BaseDomain[K]] {
+abstract class Repository[K,A <: DomainType[K]] {
 
   implicit def ordering: Ordering[K];
 

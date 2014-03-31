@@ -15,7 +15,7 @@
  */
 
 
-package io.straight.fw.marshalling
+package io.straight.fw.spray.marshalling
 
 import com.fasterxml.jackson.databind.{ JsonDeserializer, JsonSerializer }
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -32,7 +32,7 @@ import io.straight.fw.model.Uuid
 class UuidDeserializer extends JsonDeserializer[Uuid]
 {
   override def deserialize(jp: JsonParser,ctxt: DeserializationContext) : Uuid = {
-    Uuid(jp.getText()) 
+    Uuid(jp.getText)
   }
 }
 
@@ -49,7 +49,7 @@ class UuidSerializer extends JsonSerializer[Uuid]
 
 object UuidModule { 
   def create() = { 
-    new SimpleModule("UuidModule",new Version(1,0,0,null,"io.straight","UuidModule"))
+    new SimpleModule("UuidModule",new Version(1,0,0,null,"io.straight.fw","UuidModule"))
                 .addDeserializer(classOf[Uuid], new UuidDeserializer())
                 .addSerializer(classOf[Uuid], new UuidSerializer())
   }
