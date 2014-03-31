@@ -1,4 +1,4 @@
-package io.straight.fw.service.simple
+package io.straight.fw.service.sz
 
 import io.straight.fw.messages.{EventType, CommandType}
 import io.straight.fw.model._
@@ -10,12 +10,10 @@ import io.straight.fw.service.{AbstractService, UuidRepository}
  *
  * @author rbuckland
  */
-trait SimpleUuidAbstractProcessor[D <: DomainType[Uuid], E <: EventType, C <: CommandType] extends EitherValidationProccessor[D,E,C,Uuid] {
+trait SZValidationUuidAbstractProcessor[D <: DomainType[Uuid], E <: EventType, C <: CommandType] extends SZValidationProcessor[D,E,C,Uuid] {
   val repository: UuidRepository[D]
   val idGenerator: UuidGenerator[D]
 }
 
-trait SimpleUuidAbstractService[D <: DomainType[Uuid]] extends AbstractService[D,Uuid]{
-  override def repository: UuidRepository[D]
-}
+
 

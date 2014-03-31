@@ -3,6 +3,8 @@
 .idea/
 .idea_modules/
 
+.DS_Store
+
 # sbt specific
 dist/*
 target/

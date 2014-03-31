@@ -7,6 +7,7 @@ import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
 import akka.actor.ActorLogging
 import scala.language.reflectiveCalls
+import io.straight.fw.model.validation.simple._
 
 /**
  * D is your Domain Class (e.g. Person, Robot, Widget, ShopBooking, CarSale, TreeLoppingAppointment]
@@ -16,6 +17,8 @@ import scala.language.reflectiveCalls
  * E is your EventType - we use a type class here - your messae must implement a { def timestamp: Long }
  * C is your CommandType - we use a type class here - your messae must implement a { def timestamp: Long }
  * I is the ID of your domain class (a Long, or a String, or a Uuid .. we have a sample custom Uuid in this project)
+ *
+ * @see <a href="MessagesInOutOfProcessor.jpg">MessagesInOutOfProcessor.jpg</a>
  *
  * @author rbuckland
  */
@@ -143,6 +146,8 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
     }
   }
 
+  def ensureVersion(id: I, expectedVersion: Option[Long])(implicit t: ClassTag[D]): VD
+
   val invalidVersionMessage = "%s(%s): expected version %s doesn't match current version %s"
 
   def invalidVersion(obj:D,expected: Long)(implicit t: ClassTag[D]) =
@@ -158,7 +163,6 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
    * @return validation for type DomainObject
    */
   def toDomainValidationFailure(validation: VE): VD
-
 
   /**
    * return a failure Validation for the domainObject

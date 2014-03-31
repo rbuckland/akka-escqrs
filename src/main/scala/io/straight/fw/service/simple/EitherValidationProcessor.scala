@@ -15,9 +15,18 @@ import scala.language.reflectiveCalls
  *
  * @author rbuckland
  */
-trait EitherValidationProccessor[D <: DomainType[I], E <: EventType, C <: CommandType, I <: Any]
+trait EitherValidationProcessor[D <: DomainType[I], E <: EventType, C <: CommandType, I <: Any]
   extends AbstractProcessor[D, EitherDomainValidation[D], EitherDomainValidation[E], E, C, I] {
 
+  /**
+   * Utility method we will use to ensure that the version being modified is the one you expect :-)
+   */
+  override def ensureVersion(id: I, expectedVersion: Option[Long])(implicit t: ClassTag[D]): EitherDomainValidation[D] = {
+    repository.getByKey(id) match {
+      case None => DomainError(aggregateClassName + "(%s): does not exist" format id).fail
+      case Some(domainObject) => versionCheck(domainObject,expectedVersion)
+    }
+  }
 
   override def versionCheck(obj:D, expectedVersion: Option[Long])(implicit t: ClassTag[D]): EitherDomainValidation[D] = {
     expectedVersion match {
