@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.straight.fw.validation
+package io.straight.fw.model.validation
 
 import spray.util.LoggingContext
 import spray.routing.ExceptionHandler

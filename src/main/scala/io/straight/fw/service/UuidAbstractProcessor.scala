@@ -10,7 +10,7 @@ import scala.Some
 /**
  * @author rbuckland
  */
-trait UuidAbstractProcessor[T <: DomainType[Uuid], E <: EventType, C <: CommandType] extends AbstractProcessor[T,E,C,Uuid] {
+trait UuidAbstractProcessor[T <: DomainType[Uuid], V <: ValidationBase[T], E <: EventType, C <: CommandType] extends AbstractProcessor[T,E,C,Uuid] {
 
 
   val repository: UuidRepository[T]
@@ -25,7 +25,7 @@ trait UuidAbstractProcessor[T <: DomainType[Uuid], E <: EventType, C <: CommandT
    * @param expectedVersion
    * @return
    */
-  def ensureVersion(uuid: Uuid, expectedVersion: Option[Long])(implicit t: ClassTag[T]): DomainValidation[T] = {
+  def ensureVersion(uuid: Uuid, expectedVersion: Option[Long])(implicit t: ClassTag[T]): V = {
     repository.getByKey(uuid) match {
       case None => DomainError(aggregateClassName + "(%s): does not exist" format uuid).fail
       case Some(domainObject) => domainObject.versionCheck(expectedVersion)

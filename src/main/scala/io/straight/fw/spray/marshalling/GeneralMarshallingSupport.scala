@@ -23,14 +23,14 @@ import spray.httpx.marshalling._
 import spray.httpx.unmarshalling._
 import spray.http.HttpEntity.Empty
 import spray.http.{MediaType, HttpEntity, ContentTypeRange}
-import io.straight.fw.validation.ValidationException
+import io.straight.fw.model.validation.ValidationException
 
 
 object DomainValidationMarshaller {
 
   val logger = LoggerFactory.getLogger(this.getClass())
 
-  import scalaz._
+  import io.straight.fw.model.validation.scalaz._
 
   implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
     Marshaller[DomainValidation[T]] { (value,ctx) =>

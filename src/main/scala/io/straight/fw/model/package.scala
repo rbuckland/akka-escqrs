@@ -19,18 +19,16 @@ package io.straight.fw
 package object model {
 
   type DomainError          = List[String]
+
   object DomainError {
     def apply(msg: String): DomainError = List(msg)
   }
 
-  // the validation type must implement isSuccess and isFailure
-  type ValidationBase[T] = AnyRef[T] { def isSuccess: Boolean; def isFailure:Boolean }
-
-  type IOValidation[V,T] = V[DomainError,T] {
-
+  // the validation type must implement isSuccess and isFailure, asSuccess and asFailure
+  type ValidationBase[T] = AnyRef {
+    def isSuccess: Boolean
+    def isFailure:Boolean
   }
-
-  type EitherValidation[T] = IOValidation[Either,T]
 
   type DomainType[I] = AnyRef{
     def id: I

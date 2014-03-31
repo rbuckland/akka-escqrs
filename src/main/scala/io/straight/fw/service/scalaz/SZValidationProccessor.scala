@@ -2,10 +2,10 @@ package io.straight.fw.service.scalaz
 
 import io.straight.fw.service.AbstractProcessor
 import io.straight.fw.messages.{CommandType, EventType}
-import io.straight.fw.model.{DomainError, DomainType}
+import io.straight.fw.model.{ValidationBase, DomainError, DomainType}
 import scalaz._
 import Scalaz._
-import io.straight.fw.model.scalaz.DomainValidation
+import io.straight.fw.model.validation.scalaz.DomainValidation
 import scala.reflect.ClassTag
 
 /**
@@ -13,24 +13,38 @@ import scala.reflect.ClassTag
  *
  * @author rbuckland
  */
-trait SZValidationProccessor[D <: DomainType[I], E <: EventType, C <: CommandType, I <: Any] extends AbstractProcessor[D, DomainValidation[D], E, C, I] {
-  /**
-   * return a success obj from the DomainObject that the event created
-   * @param domainObject
-   * @return
-   */
-  override def toSuccess(domainObject: D): DomainValidation[D] = domainObject.success
+trait SZValidationProccessor[D <: DomainType[I], E <: EventType, C <: CommandType, I <: Any] extends AbstractProcessor[D, E, C, I] {
 
   private val invalidVersionMessage = "%s(%s): expected version %s doesn't match current version %s"
 
   def invalidVersion[T:ClassTag](obj:D,expected: Long) =
     DomainError(invalidVersionMessage format(scala.reflect.classTag[T].getClass.getCanonicalName, obj.id, expected, obj.version))
 
-  def versionCheck(obj:D, expectedVersion: Option[Long]): DomainValidation[D] = {
+  override def versionCheck(obj:D, expectedVersion: Option[Long])(implicit t: ClassTag[D]): DomainValidation[D] = {
     expectedVersion match {
       case Some(expected) if obj.version.toLong != expected.toLong => invalidVersion(obj,expected).fail
       case Some(expected) if obj.version.toLong == expected.toLong => obj.success
       case None => obj.success
     }
   }
+
+  /**
+   * return a failure Validation for the domainObject
+   * scalaz.Validation or EitherValidation knows how to create one of these
+   *
+   * @param validation
+   * @return
+   */
+  override def toDomainValidationFailure(validation: ValidationBase[E]): DomainValidation[D] = {
+    case Success(event) => // we cannot map from event to DomainValidation[domainObject]
+    case Failure(error) => error.fail
+  }
+
+  /**
+   * return a success of domain object creation
+   *
+   * @param domainObject
+   * @return
+   */
+  override def toDomainValidationSuccess(domainObject: D): DomainValidation[D] = domainObject.success
 }

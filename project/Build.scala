@@ -70,6 +70,9 @@ object Dependencies {
     // general Scala dependencies
     //
     "org.scala-lang" % "scala-reflect" % Version.Scala % "compile",
+
+    // TODO we want to set scalaz as provided so we don't depend and force our users
+    // to depend on it
     "org.scalaz" %% "scalaz-core" % "7.0.5" % "compile",
     "com.typesafe.akka" %% "akka-actor" % Version.Akka % "compile",
     "org.scala-stm" %% "scala-stm" % "0.7" % "compile",

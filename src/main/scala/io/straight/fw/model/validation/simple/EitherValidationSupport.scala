@@ -1,10 +1,11 @@
-package io.straight.fw.validation
+package io.straight.fw.model.validation.simple
 
 /**
  * Some people don't like or want to use Scalaz validation.
  * I like it.
+ *
  * Some things I really like about Scalaz. But for new people learning, it is just a barrier without
- * some good documentation. Simple. (time = money = someone has to pay it)
+ * some good documentation. Simple. (time to learn = money required = someone has to pay it)
  *
  * Scalaz _can_ mean less time with my children who will not care what ScalaZ is :-o (wow!)
  *

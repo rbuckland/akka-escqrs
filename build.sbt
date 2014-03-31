@@ -2,7 +2,7 @@ organization in ThisBuild := "io.straight.fw"
 
 name := "io-straight-fw"
 
-version in ThisBuild := "0.3"
+version in ThisBuild := "0.4"
 
 scalacOptions in ThisBuild := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-feature", "-language:postfixOps", "-language:implicitConversions") // , "-Ydebug", "-verbose","-Yissue-debug") // -Ydebug
 
