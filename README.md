@@ -39,53 +39,103 @@ This is a simple set of helper classes for building web apps with
 ## Using a repository (your memory Image)
 ```scala
 /**
- * A Service class - a wrapper around out repo to make it safe for every one
- * @param bindingModule subcut
+ * The Service in injected with effectively Read-Only access to the memory Image
+ *
+ * If you have special "ways" to interrogate your Service, then put them here
+ *
+ * @author rbuckland
  */
-class FileService()
-                 (implicit val bindingModule: BindingModule)
-  extends AbstractService[StoredFile]
+class ConnectGroupService()
+                         (implicit val bindingModule: BindingModule)
+  extends UuidAbstractService[ConnectGroup]
   with AutoInjectable {
-  val repository = injectOptional [UuidWithIdRepository[StoredFile]].get
+
+  val repository: UuidRepository[ConnectGroup] = inject[UuidRepository[ConnectGroup]]
+
 }
 ```
 
 ## The Actor akka-persistence Processor
 ```scala
+package com.soqqo.luap.service.connectgroup
+
+import com.soqqo.luap.model.connectgroup._
+import com.soqqo.luap.model.person._
+import akka.actor.{Props, actorRef2Scala}
+import scalaz._
+import Scalaz._
+import com.soqqo.luap.service.person.PersonService
+
+import com.soqqo.luap.messages._
+import com.soqqo.luap.messages.CreateConnectGroup
+import com.escalatesoft.subcut.inject.{AutoInjectable, BindingModule}
+import io.straight.fw.service.{UuidAbstractService, UuidRepository}
+import io.straight.fw.model.{Uuid, DomainError, UuidGenerator}
+import io.straight.fw.akka.ActorSupport
+import io.straight.fw.service.sz.SZValidationUuidAbstractProcessor
+import io.straight.fw.model.validation.sz.SZDomainValidation
+
+
 /**
- *
- * @author rbuckland
+ * ConnectGroupProcessor
  */
-class FileProcessor()
-                   (implicit val bindingModule: BindingModule)
-  extends AbstractProcessor[StoredFile,StoredFileEvent, StoredFileCommand]
-  with AutoInjectable
-  with UuidGenerator[StoredFile]{
+class ConnectGroupProcessor()
+                           (implicit val bindingModule: BindingModule)
+  extends SZValidationUuidAbstractProcessor[ConnectGroup, ConnectGroupEvent, ConnectGroupCommand]
+  with AutoInjectable {
 
-  val repository = injectOptional [UuidWithIdRepository[StoredFile]].get
+  val repository = inject[UuidRepository[ConnectGroup]]
+  val personService = inject[PersonService]
+  val idGenerator = inject[UuidGenerator[ConnectGroup]]
 
-  /*
-   * This method is called on recovery as well as normal creation.
-   * i.e This is the one to one mapping between an Event and Creation or modification
-   * of a Domain Object. I guess .. tread carefully here. It must be self contained.
+  /**
+   * This magic method will create a ConnectGroup given an Event.
+   * The AbstractProcessor calls this method on our behalf inside the persist(event) {  domainObjectFromEvent(event) }
+   *
+   * remember, although the event is "past tense" (eg ConnectGroupCreated) the order is
+   *
+   * cmd --> event --> objectCreated  .. and not
+   * cmd --> objectCreated --> event
+   *
+   * If you look at the "ConnectGroupProcessor" as a Black Box.. a Command went in and an Event Came out
+   * So .. the past Tense is for the external "looker" of this Processor, not so much us.
+   *
+   * We just need to know how to create a ConnectGroup, given the event (because we are event sourced)
+   *
+   * @param event
+   * @return
    */
-  override def eventToDomainObject(event: StoredFileEvent):StoredFile = {
-    event match {
-      case e: NewFileAdded => StoredFile(e)
-      case e: FileContentChanged => repository.getByKey(e.uuid).get.copy(filename = e.newFilename, changedDateTime = Some(e.datetimeChanged))
-    }
+  override def domainObjectFromEvent(event: ConnectGroupEvent): ConnectGroup = {
+    case evt: ConnectGroupCreated => ConnectGroup(evt)
+    case evt: ConnectGroupNameChanged => repository.getByKey(evt.id).get.changeName(evt.name)
   }
+  /**
+   *
+   * @return list of people
+   */
+  def getLeaders(leaders: List[Uuid]): SZDomainValidation[List[Person]] =
+    (for (
+      uuid <- leaders;
+      person <- personService.get(uuid)
+    ) yield person).toList.success
 
-  def generateId = newUuid(DateTime.now.getMillis) // call UUID when we need it
 
-  val receiveCommand: Receive = {
-
-    case cmd : AddNewFile => process { StoredFile.canCreate(generateId,cmd) }
-    case cmd : ChangeFile => process {
+  // command to event
+  val processCommand: Receive = {
+    case cmd@CreateConnectGroup(timestamp, leaders, connectGroupName) => {
       for {
-        obj <- ensureVersion(cmd.uuid,Option(cmd.expectedVersion))
-      } yield FileContentChanged(obj.uuid,obj.displayName,cmd.newFilename,DateTime.now)
+        leaders <- getLeaders(leaders)
+      } yield ConnectGroup.canCreate(idGenerator.newId, cmd, leaders)
     }
+
+    case cmd@ChangeConnectGroupName(timestamp, connectGroupId, expectedVersion, newName) => {
+      for {
+        obj <- ensureVersion(connectGroupId, cmd.expectedVersion)
+        event <- ConnectGroup.canChangeName(obj, cmd)
+      } yield event
+    }
+
   }
+
 }
 ```
