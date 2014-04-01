@@ -29,6 +29,16 @@ case class StraightIOUuidException(error: String) extends StraightIOBaseExceptio
  * actor to the Event sourced one, and all AbstractProcesssor (shared aggregates) would
  * communicate with it to get keys (completely do-able) and not tested.
  *
+ * A note on the Class Name usage
+ *
+ * - the class name is used as the key lookup in our repository - originally there was the concept of one repository
+ *   but just never took that bit out
+ *
+ * - The class name is used as the groupId in the UUID, because we generate Uuid's from here
+ *   it is better that we control that Uuid.groupId(klass.getCanonicalName) .. that way the Uuid does not care
+ *   about what forms a groupId
+ *
+ *
  * @author rbuckland_
  */
 class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenerator[Uuid,T] {
@@ -43,7 +53,7 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
    */
   def newUuid(upperLong: Long): Uuid = {
     ids += (klassName -> (currentId + 1))
-    Uuid(currentId(),Uuid.groupId(klassName),upperLong)
+    Uuid(currentId(),Uuid.groupIdForClass(klass),upperLong)
   }
 
   override def newId() :Uuid = newUuid(new Date().getTime)
@@ -51,10 +61,10 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
   private def currentId() = ids.getOrElseUpdate(klassName, 0L)
 
   /**
-   * A potential next Id  (you can't use it though as it won't really be the next ID (time based remember!!)
+   * A potential next Id  - helps for logging - (you can't use it though as it won't really be the next ID (time based remember!!)
    * @return
    */
-  def potentialNextId = Uuid(currentId + 1,Uuid.groupId(klassName),new Date().getTime)
+  def potentialNextId = Uuid(currentId + 1,Uuid.groupIdForClass(klass),new Date().getTime)
 
   /**
    * We need this guy be running as an Actor .. return the next ID. Processed inside a transaction
@@ -71,5 +81,4 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
       }
   }
 }
-
 

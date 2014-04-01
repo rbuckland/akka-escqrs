@@ -21,11 +21,24 @@ class UuidRepository[A <: DomainType[Uuid]] extends Repository[Uuid,A] {
    * iiiiiiii-iiii-6xxx-a000-0000
    * where the i's are the sequential ID
    *
-   * So this will just find (in the repo) the object where the UUID id matches
+   * i == numericId
+   * x = groupId
    *
    * @return
    */
-  def findBySimpleId(numericId: Long): Option[A] = ??? // getKeys.find( uuid => if (uuid.id.equals(numericId)) getByKey(uuid) )
+  def findByIdAndGroup(numericId: Long, groupId: Int): Option[A] = {
+    getKeys.find { case Uuid(`numericId`,`groupId`,_) => true } match {
+      case Some(id) => getByKey(id)
+      case None => None
+    }
+  }
+
+  def findByOnlyId(numericId: Long): Option[A] = {
+    getKeys.find { case Uuid(`numericId`,_,__) => true } match {
+      case Some(id) => getByKey(id)
+      case None => None
+    }
+  }
 
   implicit object ordering extends Ordering[Uuid] {
     def compare(a: Uuid, b: Uuid): Int = {

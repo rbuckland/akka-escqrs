@@ -5,7 +5,7 @@ import io.straight.fw.model._
 import akka.persistence.EventsourcedProcessor
 import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
-import akka.actor.ActorLogging
+import akka.actor.{ActorSelection, ActorLogging}
 import scala.language.reflectiveCalls
 import io.straight.fw.model.validation.simple._
 
@@ -140,10 +140,30 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
       persist(event) { e =>
         val obj = domainObjectFromEvent(e)
         updateRepository(obj)
-        context.system.eventStream.publish(e) // publish to our subscribers the event we just created
-        sender ! toDomainValidationSuccess(obj) // return the object as a domain validation success back to the sender
+        sendEvent(event)
+        sendObject(obj)
       }
     }
+  }
+
+  /**
+   * Send the object -- overideable
+   *
+   * @param obj
+   */
+  def sendObject(obj: D) = {
+    sender ! toDomainValidationSuccess(obj) // return the object as a domain validation success back to the sender
+  }
+
+  /**
+   * Overide-able
+   * See http://doc.akka.io/docs/akka/snapshot/scala/persistence.html#Reliable_event_delivery for Channels
+   *
+   * @param event
+   */
+  def sendEvent(event: E) = {
+    // this is only at MOST once, as opposed to a channel which can guarantee at Least once
+    context.system.eventStream.publish(event) // publish to our subscribers the event we just created
   }
 
   def ensureVersion(id: I, expectedVersion: Option[Long])(implicit t: ClassTag[D]): VD

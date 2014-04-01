@@ -21,18 +21,19 @@ import scala.collection.immutable.TreeMap
 import io.straight.fw.model.DomainType
 import scala.language.reflectiveCalls
 
-/**
- * A Wrapper around an STM Ref of a SortedMap.
- *
- * To be used by the "Service" class and the "Processor" classes only
- *
- */
-abstract class Repository[K,A <: DomainType[K]] {
 
-  implicit def ordering: Ordering[K];
+/**
+ * We infer that a value, has some relationship to a key, we can derive a key from a value
+ *
+ * @tparam K
+ * @tparam A
+ */
+abstract class SimpleRepository[K,A](keyGetter: (A) => K ) {
+
+  implicit def ordering: Ordering[K]
 
   private val internalMap :Ref[TreeMap[K,A]] = Ref(TreeMap.empty[K, A])
-  
+
   def getMap = internalMap.single.get
   def getByKey(key: K): Option[A] = getMap.get(key)
   def getValues: Iterable[A] = getMap.values
@@ -45,6 +46,13 @@ abstract class Repository[K,A <: DomainType[K]] {
    */
   def maxId:K
 
-  def updateMap(value: A) = internalMap.single.transform(map => map + (value.id -> value))
-   
+  def updateMap(value: A) = internalMap.single.transform(map => map + (keyGetter(value) -> value))
+
 }
+
+/**
+ * This one infers that the Value is a DomainType
+ * @tparam K
+ * @tparam A
+ */
+abstract class Repository[K,A <: DomainType[K]] extends SimpleRepository[K,A]({(x: A) => x.id })

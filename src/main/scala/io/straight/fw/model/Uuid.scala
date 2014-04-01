@@ -86,10 +86,13 @@ object Uuid {
   def createPartialUuidString(id: Long, groupId: Int): String = new java.util.UUID(groupId | (UUID_VERSION << UUID_VERSION_OFFSET) | (id << ID_OFFSET), 0L).toString().substring(0, 18)
 
   /**
-   * A Class name version
+   * A String name version
    */
   def createPartialUuidString(id: Long, groupName: String): String = createPartialUuidString(id, groupId(groupName))
 
+  def createPartialUuidString(id: Long, klass: Class[_]): String = createPartialUuidString(id, groupIdForClass(klass))
+
+  def groupIdForClass(klass: Class[_]):Int = groupId(klass.getCanonicalName)
 
   /**
    * Create a Uuid object from the standard UUID String

@@ -11,4 +11,5 @@ trait AbstractService[D <: DomainType[I], I <: Any] {
   def getMap = repository.getMap
   def getAll: Iterable[D] = repository.getValues
   def exists(id: I) = repository.getByKey(id).isDefined
+  def fromIdList(ids: Iterable[I]):Iterable[D] = ids.map(id => get(id)).flatten
 }
