@@ -148,7 +148,7 @@ class ConnectGroupProcessor()
    * @param event
    * @return
    */
-  override def domainObjectFromEvent(event: ConnectGroupEvent): ConnectGroup = {
+  override def domainObjectFromEvent(event: ConnectGroupEvent): ConnectGroup = event match {
     case evt: ConnectGroupCreated => ConnectGroup(evt)
     case evt: ConnectGroupNameChanged => repository.getByKey(evt.id).get.changeName(evt.name)
   }
@@ -156,30 +156,24 @@ class ConnectGroupProcessor()
    *
    * @return list of people
    */
-  def getLeaders(leaders: List[Uuid]): SZDomainValidation[List[Person]] =
-    (for (
-      uuid <- leaders;
-      person <- personService.get(uuid)
-    ) yield person).toList.success
-
+  def leadersFromUuidList(leaders: List[Uuid]) = leaders.map(id => personService.get(id)).flatten
 
   // command to event
-  val processCommand = process {
-    case cmd @ CreateConnectGroup(timestamp, leaders, connectGroupName) => {
-      for {
-        leaders <- getLeaders(leaders)
-      } yield ConnectGroup.canCreate(idGenerator.newId, cmd, leaders)
-    }
+  val processCommand:Receive = {
+      case cmd@CreateConnectGroup(timestamp, leaderIds, connectGroupName) => process {
+        personService.fromIdList(leaderIds).toList match {
+          case Nil => DomainError("None of the Leader Id's Were valid").fail
+          case leaders => ConnectGroup.canCreate(idGenerator.newId(), cmd, leaders)
+        }
+      }
 
-    case cmd @ ChangeConnectGroupName(timestamp, connectGroupId, expectedVersion, newName) => {
-      for {
-        obj <- ensureVersion(connectGroupId, cmd.expectedVersion)
-        event <- ConnectGroup.canChangeName(obj, cmd)
-      } yield event
+      case cmd@ChangeConnectGroupName(timestamp, connectGroupId, expectedVersion, newName) => process {
+        for {
+          obj <- ensureVersion(connectGroupId, cmd.expectedVersion)
+          event <- ConnectGroup.canChangeName(obj, cmd)
+        } yield event
+      }
     }
-
-  }
 
 }
-
 ```
