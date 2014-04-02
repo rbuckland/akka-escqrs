@@ -106,6 +106,7 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
    * @return
    */
   val receiveRecover: Receive = {
+    case fail: akka.persistence.RecoveryFailure => log.error(fail.cause,"Recovery Failure Occured")
     case evt: EventType => {
       updateRepository(domainObjectFromEvent(evt.asInstanceOf[E]))
     }
