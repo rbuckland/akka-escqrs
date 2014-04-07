@@ -47,7 +47,9 @@ object Dependencies {
 
   val akkaPersistence = Seq(
     // akka persistence
-    "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.0" % "compile"
+    "com.typesafe.akka" %% "akka-persistence-experimental" % Version.Akka % "compile",
+    "com.typesafe.akka" %% "akka-cluster"                  % Version.Akka,
+    "com.typesafe.akka" %% "akka-contrib"                  % Version.Akka
   )
 
 

@@ -3,7 +3,7 @@ package io.straight.fw.service
 import io.straight.fw.model.{DomainType, Uuid}
 import scala.language.reflectiveCalls
 
-class UuidRepository[A <: DomainType[Uuid]] extends Repository[Uuid,A] {
+class UuidRepository[A <: DomainType[Uuid]] extends Repository[Uuid,A] with Serializable {
 
   /**
    * Iterable list objects by a partial match on the UUID
