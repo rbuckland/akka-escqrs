@@ -1,21 +1,26 @@
 package io.straight.fw.service
 
 import io.straight.fw.model._
-
 import akka.persistence.EventsourcedProcessor
 import io.straight.fw.messages.{CommandType, EventType}
 import scala.reflect.ClassTag
 import akka.actor.{ActorSelection, ActorLogging}
 import scala.language.reflectiveCalls
 import io.straight.fw.model.validation.simple._
+import akka.actor.ActorRef
+import akka.persistence.SnapshotOffer
+import scala.collection.immutable.TreeMap
+import akka.persistence.SaveSnapshotSuccess
+import akka.persistence.SaveSnapshotFailure
+
 
 /**
  * D is your Domain Class (e.g. Person, Robot, Widget, ShopBooking, CarSale, TreeLoppingAppointment]
  *   Implement a class that looks like DomainType
  * VE is the validation class for Events
  * VD is the validation class for Domain Object
- * E is your EventType - we use a type class here - your messae must implement a { def timestamp: Long }
- * C is your CommandType - we use a type class here - your messae must implement a { def timestamp: Long }
+ * E is your EventType - we use a type class here - your message must implement a { def timestamp: Long }
+ * C is your CommandType - we use a type class here - your message must implement a { def timestamp: Long }
  * I is the ID of your domain class (a Long, or a String, or a Uuid .. we have a sample custom Uuid in this project)
  *
  * @see <a href="MessagesInOutOfProcessor.jpg">MessagesInOutOfProcessor.jpg</a>
@@ -23,6 +28,8 @@ import io.straight.fw.model.validation.simple._
  * @author rbuckland
  */
 trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: EventType, C <: CommandType, I <: Any] extends EventsourcedProcessor with ActorLogging {
+
+  val SnapShot = 'Snapshot
 
   self ! "ResetPrimaryKeyId"
 
@@ -61,7 +68,7 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
    * This is where the commands will come in
    * @return
    */
-  def processCommand: Receive
+  def commandHandler: Receive
 
 
   /**
@@ -106,13 +113,27 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
    * @return
    */
   val receiveRecover: Receive = {
-    case fail: akka.persistence.RecoveryFailure => log.error(fail.cause,"Recovery Failure Occured")
+    case SnapshotOffer(metadata, snapshot:TreeMap[I,D]) => {
+      log.debug(s"SnapshotOffer, metadata : $metadata")
+      repository.overwriteMap(snapshot)
+    }
+    case fail: akka.persistence.RecoveryFailure => log.error(fail.cause,"Recovery Failure Occurred")
     case evt: EventType => {
       updateRepository(domainObjectFromEvent(evt.asInstanceOf[E]))
     }
-    // TODO case SnapshotOffer(_, snapshot: ExampleState) => state = snapshot
   }
 
+  /**
+   * Basic command handler for common command
+   */
+  def processCommand: Receive = {
+    case SnapShot => saveSnapshot(repository.getMap)
+    case SaveSnapshotSuccess(metadata) => log.debug(s"Snapshot saved, metadata: $metadata")
+    // What do we want to do here?
+    case SaveSnapshotFailure(metadata, reason) => log.error(s"Save snapshot FAILED, reason : $reason")
+    case msg: Any => commandHandler(msg)
+  }
+  
   /**
    * The implementors handler of their event -> that creates a domain object
    * e.g. case e: NewFileAdded => StoredFile(e)
@@ -153,6 +174,7 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
    * @param obj
    */
   def sendObject(obj: D) = {
+    log.debug(s"returning object : $obj to sender")
     sender ! toDomainValidationSuccess(obj) // return the object as a domain validation success back to the sender
   }
 
