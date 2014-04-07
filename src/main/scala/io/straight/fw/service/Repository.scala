@@ -48,6 +48,8 @@ abstract class SimpleRepository[K,A](keyGetter: (A) => K ) {
 
   def updateMap(value: A) = internalMap.single.transform(map => map + (keyGetter(value) -> value))
 
+  def overwriteMap(newMap: TreeMap[K,A]) = internalMap.single.transform( old => newMap)
+
 }
 
 /**

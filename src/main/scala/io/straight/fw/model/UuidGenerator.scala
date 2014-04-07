@@ -64,7 +64,7 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
    * A potential next Id  - helps for logging - (you can't use it though as it won't really be the next ID (time based remember!!)
    * @return
    */
-  def potentialNextId = Uuid(currentId + 1,Uuid.groupIdForClass(klass),new Date().getTime)
+  def potentialNextId = Uuid(currentId + 1,Uuid.groupIdForClass(klass),Uuid.crc48(new Date().getTime))
 
   /**
    * We need this guy be running as an Actor .. return the next ID. Processed inside a transaction

@@ -10,7 +10,7 @@ object Version {
   val Scala = "2.10.3"
   val Akka = "2.3.0"
   val Spray = "1.3.1"
-  val Jackson = "2.2.1"
+  val Jackson = "2.3.2"
 }
 
 
@@ -42,7 +42,6 @@ object Dependencies {
         "org.specs2"          %%  "specs2"        % "2.2.3" % "test",
         "io.spray"            %   "spray-testkit" % Version.Spray  % "test",
         "com.typesafe.akka"   %%  "akka-testkit"  % Version.Akka   % "test"
-
       )
 
   val akkaPersistence = Seq(

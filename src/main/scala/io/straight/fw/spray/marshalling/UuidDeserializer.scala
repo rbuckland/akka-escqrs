@@ -32,7 +32,7 @@ import io.straight.fw.model.Uuid
 class UuidDeserializer extends JsonDeserializer[Uuid]
 {
   override def deserialize(jp: JsonParser,ctxt: DeserializationContext) : Uuid = {
-    Uuid(jp.getText)
+    Uuid.fromString(jp.getText)
   }
 }
 
@@ -42,7 +42,7 @@ class UuidDeserializer extends JsonDeserializer[Uuid]
 class UuidSerializer extends JsonSerializer[Uuid]
 {
   override def serialize(uuid: Uuid,jsonGenerator: JsonGenerator, serializerProvider: SerializerProvider) = {
-    jsonGenerator.writeString(uuid.uuid)
+    jsonGenerator.writeString(uuid.toString)
   }
 }
 
