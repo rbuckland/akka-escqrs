@@ -20,6 +20,8 @@ import scala.collection.mutable.{Map => MutableMap}
 import scala.reflect.ClassTag
 import java.util.Date
 import io.straight.fw.StraightIOBaseException
+import scala.concurrent.stm._
+import scala.collection.immutable.TreeMap
 
 
 case class StraightIOUuidException(error: String) extends StraightIOBaseException(error,null)
@@ -43,7 +45,7 @@ case class StraightIOUuidException(error: String) extends StraightIOBaseExceptio
  */
 class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenerator[Uuid,T] {
   
-  private var ids = MutableMap.empty[String, Long]
+  private var ids: Ref[TreeMap[String,Long]] = Ref(TreeMap.empty[String, Long])
 
   val klassName = klass.getCanonicalName
 
@@ -52,13 +54,15 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
    * @param upperLong typically a timestamp (externally sourced, so that replays will work)
    */
   def newUuid(upperLong: Long): Uuid = {
-    ids += (klassName -> (currentId + 1))
-    Uuid(currentId(),Uuid.groupIdForClass(klass),upperLong)
+    atomic { implicit txn =>
+      ids.transform(map => map + (klassName -> (currentId + 1)))
+      Uuid(currentId(), Uuid.groupIdForClass(klass), upperLong)
+    }
   }
 
   override def newId() :Uuid = newUuid(new Date().getTime)
 
-  private def currentId() = ids.getOrElseUpdate(klassName, 0L)
+  private def currentId() = ids.single.get.getOrElse(klassName, 0L)
 
   /**
    * A potential next Id  - helps for logging - (you can't use it though as it won't really be the next ID (time based remember!!)
@@ -71,14 +75,15 @@ class UuidGenerator[T <: DomainType[Uuid]](val klass: Class[T]) extends IdGenera
    */
   override def setStartingId(startingUuid: Uuid): Unit = {
 
-      val anewId = startingUuid.id
-
+    val anewId = startingUuid.id
+    atomic { implicit txn =>
       // not allowed to set the starting ID to be less that the current used up number
       if (currentId > anewId) {
         throw new StraightIOUuidException("Starting Id too low (" + startingUuid + "). It cannot be less than (" + currentId + ")")
       } else {
-        ids += (klassName -> anewId)
+        ids.transform(map => map + (klassName -> anewId))
       }
+    }
   }
 }
 

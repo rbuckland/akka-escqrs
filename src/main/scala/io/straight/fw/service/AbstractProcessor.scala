@@ -148,23 +148,30 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
 
   /**
    * Our magical Process method.
-   * @param fvalidate Takes a Command and produces an Event or Validation Error
+   * @param fcmdToEvent Takes a Command and produces an Event or some type that also/optionally a failure
    * @return nothing (we send out to our actor the new object or the error)
    */
-
-  // TODO implement Command Logging (not sourcing) .. so use this later
-  def process(fvalidate: => VE): Unit = {
-    val validation = fvalidate
-    if (isFailure(validation)) {
-      sender ! toDomainValidationFailure(validation)
+  def process(fcmdToEvent: => VE): Unit = {
+    // TODO implement Command Logging (not sourcing) .. so use this later
+    // is an ? if statement quicker here ?
+    val result = fcmdToEvent
+    if (isFailure(result)) {
+      sendFailure(result)
     } else {
-      val event = toEvent(validation)
-      persist(event) { e =>
-        val obj = domainObjectFromEvent(e)
-        updateRepository(obj)
-        sendEvent(event)
-        sendObject(obj)
-      }
+      persistAndSend(toEvent(result))
+    }
+  }
+
+  def sendFailure(result: VE) = {
+    sender ! toDomainValidationFailure(result)
+  }
+
+  def persistAndSend(event: E): Unit = {
+    persist(event) { e =>
+      val obj = domainObjectFromEvent(e)
+      updateRepository(obj)
+      sendEvent(event)
+      sendObject(obj)
     }
   }
 
