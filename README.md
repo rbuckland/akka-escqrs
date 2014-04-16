@@ -1,13 +1,17 @@
-io-straight-fw
+akka-escqrs
 ==============
 
-straight.io - akka-persistence + spray.io
+akka-escqrs - akka-persistence Event Sourcing CQRS Implementation
 =======
 
-straight.io Framework - ES/DDD/CQRS Implemented on Akka Persistence
+This is a light touch framework (you don't have to depend on "too many things").
+
+A basic framework - ES/CQRS Implemented on Akka Persistence
 * ES - Event Sourcing
-* DDD - Domain Driven design
 * CQRS - Command / Query Responsibility Separation
+
+In the samples we show how to do some DDD designs for the model
+* DDD - Domain Driven design
 
 ### Application Design
 

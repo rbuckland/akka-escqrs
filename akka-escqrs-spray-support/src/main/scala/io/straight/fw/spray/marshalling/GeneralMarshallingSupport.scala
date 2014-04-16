@@ -25,33 +25,12 @@ import spray.http.HttpEntity.Empty
 import spray.http.{MediaType, HttpEntity, ContentTypeRange}
 import io.straight.fw.model.validation.ValidationException
 
-
-/**
- * Marshal a Scalaz Domain Validation Object
- */
-object SZDomainValidationMarshaller {
-  val logger = LoggerFactory.getLogger(this.getClass)
-  import scalaz._
-  import io.straight.fw.model.validation.sz.SZDomainValidation
-  implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
-    Marshaller[SZDomainValidation[T]] { (value,ctx) =>
-      value match {
-        case Success(result) => {
-          logger.info("going to marshall " + result.getClass)
-          m.apply(result, ctx)
-        }
-        case Failure(errors) => throw ValidationException(errors)
-      }
-  }
-}
-
 /**
  * Marshal an Either Domain Validation Object
  */
 object EitherDomainValidationMarshaller {
   import io.straight.fw.model.validation.simple.EitherDomainValidation
   val logger = LoggerFactory.getLogger(this.getClass)
-  import scalaz._
   implicit def domainValidationMarshaller[T](implicit m: Marshaller[T]) =
     Marshaller[EitherDomainValidation[T]] { (value,ctx) =>
       value match {
