@@ -104,7 +104,7 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
   /**
    * A call to the repository
    */
-  private def updateRepository(domainObject: D) = repository.updateMap(domainObject)
+  protected def updateRepository(domainObject: D) = repository.updateMap(domainObject)
 
 
   /**
