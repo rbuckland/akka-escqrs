@@ -235,7 +235,7 @@ trait AbstractProcessor[D <: DomainType[I], VD <: AnyRef, VE <: AnyRef, E <: Eve
   def isFailure(validation: VE): Boolean
 
   /**
-   * Given a validation that ha succeeded, return the success (the event)
+   * Given a validation that has succeeded, return the success (the event)
    * @param validation
    * @return
    */
