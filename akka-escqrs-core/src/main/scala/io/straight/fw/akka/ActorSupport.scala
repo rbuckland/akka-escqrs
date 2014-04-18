@@ -15,4 +15,6 @@ trait ActorSupport {
 
   def actorPath = "/user/" + ACTOR_NAME
 
+  val fullProcessorName = this.getClass.getPackage.getName.split('.').reverse.head + "." + this.getClass.getSimpleName.split('$')(0)
+
 }

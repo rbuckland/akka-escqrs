@@ -38,8 +38,8 @@ object Build extends Build {
   lazy val akkaEscqrsCore = Project(id = "akka-escqrs-core", base = file("akka-escqrs-core"))
     .settings(commonModuleSettings: _*)
     .settings(libraryDependencies ++=
-      compile(akkaActor, akkaPersistence, akkaCluster, akkaContrib, scalaReflect, scalaStm, jodaTime, commonsLang) ++
-      test(scalatest) ++
+      compile(akkaActor, akkaPersistence, akkaCluster, akkaContrib, scalaReflect, scalaStm, jodaTime, jodaConvert, commonsLang) ++
+      test(scalatest, scalaMock, mockito, akkaTestKit) ++
       runtime(akkaSlf4j, logback)
     )
 

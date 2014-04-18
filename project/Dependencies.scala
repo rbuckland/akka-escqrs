@@ -44,6 +44,7 @@ object Dependencies {
   val scalatest       = "org.scalatest"      %% "scalatest"                    % "2.1.0"
   val scalaMock       = "org.scalamock"      %% "scalamock-scalatest-support"  % "3.0.1"
   val junit           = "junit"              %  "junit"                        % "4.8"
+  val mockito         = "org.mockito"        %  "mockito-core"                 % "1.9.5"
 
   //
   // jackson JSON (Un)marshalling
