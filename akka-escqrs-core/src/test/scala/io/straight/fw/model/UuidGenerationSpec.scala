@@ -3,7 +3,7 @@ package io.straight.fw.model
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import java.security.SecureRandom
-import org.joda.time.DateTime
+import java.util.Date
 
 class UuidGenerationSpec extends FlatSpec with ShouldMatchers {
 
@@ -68,7 +68,7 @@ class UuidGenerationSpec extends FlatSpec with ShouldMatchers {
 
   "The Uuuid.fromString(String)" should "create the correct Uuuid" in {
 
-    val millis = DateTime.now.getMillis
+    val millis = new Date().getTime
     println("millis = " + millis)
     println("millisHex = " + millis.toHexString)
     val uuid = Uuid(523,20,millis)
@@ -81,7 +81,7 @@ class UuidGenerationSpec extends FlatSpec with ShouldMatchers {
 
   "A large randomId to string" should "(through the crc48) give back the same Uuid" in {
 
-      val bigRand = DateTime.now.getMillis * 801279
+      val bigRand = new Date().getTime * 801279
       println("bigRand = " + bigRand)
       println("bigRandHex = " + bigRand.toHexString)
       println("bigRand as crc48(hex) = " + Uuid.crc48(bigRand).toHexString)

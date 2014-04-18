@@ -31,14 +31,14 @@ object Build extends Build {
   import BuildSettings._
   import Dependencies._
 
-  lazy val root = Project(id = "root", base = file("."))
+  lazy val root = Project(id = "akka-escqrs", base = file("."))
    .aggregate(akkaEscqrsCore,akkaEscqrsSpraySupport,akkaEscqrsWithScalazValidation)
    .settings(basicSettings: _*)
 
   lazy val akkaEscqrsCore = Project(id = "akka-escqrs-core", base = file("akka-escqrs-core"))
     .settings(commonModuleSettings: _*)
     .settings(libraryDependencies ++=
-      compile(akkaActor, akkaPersistence, akkaCluster, akkaContrib, scalaReflect, scalaStm, jodaTime, commonsLang) ++
+      compile(akkaActor, akkaPersistence, akkaCluster, akkaContrib, scalaReflect, scalaStm, commonsLang) ++
       test(scalatest) ++
       runtime(akkaSlf4j, logback)
     )
@@ -47,7 +47,7 @@ object Build extends Build {
    .dependsOn(akkaEscqrsCore)
    .settings(commonModuleSettings: _*)
    .settings(libraryDependencies ++=
-      compile(sprayRouting, jacksonCore, jacksonAnnon, jacksonDBind, jacksonJaxb, jacksonScala, jacksonXml, jacksonJoda) ++
+      compile(sprayRouting, jacksonCore, jacksonAnnon, jacksonDBind, jacksonJaxb, jacksonScala, jacksonXml, jacksonJoda, jodaTime, jodaConvert) ++
       test(scalatest) ++
       provided(slf4j) ++
       runtime(akkaSlf4j, logback)

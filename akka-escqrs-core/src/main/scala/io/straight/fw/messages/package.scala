@@ -1,7 +1,5 @@
 package io.straight.fw
 
-import org.joda.time.DateTime
-
 /**
  * Our processors expect to see a command that looks like an EventType and a CommandType,
  * Really the only thing we want on either of them is the timestamp.. to help you (the implementor)
