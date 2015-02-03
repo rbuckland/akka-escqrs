@@ -1,10 +1,10 @@
 import sbt._
 
 object Version {
-  val Scala = "2.10.3"
-  val Akka = "2.3.0"
-  val Spray = "1.3.1"
-  val Jackson = "2.3.2"
+  val Scala = "2.11.5"
+  val Akka = "2.3.9"
+  val Spray = "1.3.2"
+  val Jackson = "2.5.0"
 }
 
 /**
@@ -33,16 +33,16 @@ object Dependencies {
   val akkaContrib     = "com.typesafe.akka"  %% "akka-contrib"                  % Version.Akka
 
   // core spray dependencies
-  val sprayCan        = "io.spray"           %  "spray-can"                    % Version.Spray
-  val sprayRouting    = "io.spray"           %  "spray-routing"                % Version.Spray
+  val sprayCan        = "io.spray"           %%  "spray-can"                    % Version.Spray
+  val sprayRouting    = "io.spray"           %%  "spray-routing"                % Version.Spray
   val specs2          = "org.specs2"         %% "specs2"                       % "2.2.3" 
 
   //
   // Test Dependencies
   //
   val sprayTestKit    = "io.spray"           %  "spray-testkit"                % Version.Spray
-  val scalatest       = "org.scalatest"      %% "scalatest"                    % "2.1.0"
-  val scalaMock       = "org.scalamock"      %% "scalamock-scalatest-support"  % "3.0.1"
+  val scalatest       = "org.scalatest"      %% "scalatest"                    % "2.2.1"
+  val scalaMock       = "org.scalamock"      %% "scalamock-scalatest-support"  % "3.2"
   val junit           = "junit"              %  "junit"                        % "4.8"
 
   //
@@ -60,23 +60,23 @@ object Dependencies {
   // general Scala dependencies
   //
   val scalaReflect   = "org.scala-lang"      %  "scala-reflect"                % Version.Scala
-  val scalaz         = "org.scalaz"          %% "scalaz-core"                  % "7.0.5"
+  val scalaz         = "org.scalaz"          %% "scalaz-core"                  % "7.1.0"
   val scalaStm       = "org.scala-stm"       %% "scala-stm"                    % "0.7"
   val akkaActor      =  "com.typesafe.akka"  %% "akka-actor"                   % Version.Akka
 
   //
   // Logging
   //
-  val logback        = "ch.qos.logback"      % "logback-classic"               % "1.0.9"
+  val logback        = "ch.qos.logback"      % "logback-classic"               % "1.0.13"
   val akkaSlf4j      = "com.typesafe.akka"   %% "akka-slf4j"                   % Version.Akka
-  val slf4jJcl       = "org.slf4j"           % "jcl-over-slf4j"                % "1.7.5"
-  val slf4j       = "org.slf4j"           % "slf4j-api"                % "1.7.5"
+  val slf4jJcl       = "org.slf4j"           % "jcl-over-slf4j"                % "1.7.6"
+  val slf4j       = "org.slf4j"           % "slf4j-api"                        % "1.7.6"
 
   //
   // General Helper Libraries (Joda of course)
   //
   val commonsLang    = "org.apache.commons" % "commons-lang3"                  % "3.1"
-  val jodaTime       = "joda-time"          % "joda-time"                      % "2.1"
-  val jodaConvert    = "org.joda"           % "joda-convert"                   % "1.2"
+  val jodaTime       = "joda-time"          % "joda-time"                      % "2.2"
+  val jodaConvert    = "org.joda"           % "joda-convert"                   % "1.3.1"
 
 }
